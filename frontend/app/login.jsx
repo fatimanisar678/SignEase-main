@@ -1,22 +1,43 @@
 import React, { useMemo, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, SafeAreaView } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, SafeAreaView, Alert } from 'react-native';
 import { Link, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import ScreenContainer from '@/components/ScreenContainer';
 import CustomButton from '@/components/CustomButton';
 import CustomInput from '@/components/CustomInput';
+import { useAuth } from '@/context/AuthContext';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleLogin = () => {
-    router.replace('/(tabs)');
+  const { login } = useAuth();
+
+  const handleLogin = async () => {
+    setError('');
+    if (!email.trim() || !password) {
+      setError('Please enter your email and password');
+      return;
+    }
+    setLoading(true);
+    try {
+      await login(email.trim(), password);
+      router.replace('/(tabs)');
+    } catch (err) {
+      setError(err.message || 'Login failed. Check your email and password.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const canSubmit = useMemo(() => email.trim().length > 0 && password.length > 0, [email, password]);
+  const canSubmit = useMemo(
+    () => email.trim().length > 0 && password.length > 0 && !loading,
+    [email, password, loading]
+  );
 
   return (
     <LinearGradient
@@ -26,10 +47,10 @@ export default function LoginScreen() {
       style={styles.gradientBackground}
     >
       <SafeAreaView style={styles.safeArea}>
-        <ScreenContainer 
-          style={styles.container} 
-          containerStyle={{ backgroundColor: 'transparent' }} 
-          scrollable 
+        <ScreenContainer
+          style={styles.container}
+          containerStyle={{ backgroundColor: 'transparent' }}
+          scrollable
           contentContainerStyle={styles.scroll}
         >
           {/* Header Section */}
@@ -66,7 +87,11 @@ export default function LoginScreen() {
                 secureTextEntry={!showPassword}
                 left={<Ionicons name="lock-closed" size={18} color="#6B7280" />}
                 right={
-                  <TouchableOpacity onPress={() => setShowPassword((v) => !v)} activeOpacity={0.8} style={{ padding: 4 }}>
+                  <TouchableOpacity
+                    onPress={() => setShowPassword((v) => !v)}
+                    activeOpacity={0.8}
+                    style={{ padding: 4 }}
+                  >
                     <Ionicons
                       name={showPassword ? 'eye-off' : 'eye'}
                       size={20}
@@ -77,13 +102,15 @@ export default function LoginScreen() {
               />
 
               <View style={styles.forgotRow}>
-                <TouchableOpacity activeOpacity={0.8} onPress={() => {}}>
+                <TouchableOpacity activeOpacity={0.8} onPress={() => { }}>
                   <Text style={styles.forgotText}>Forgot Password?</Text>
                 </TouchableOpacity>
               </View>
 
+              {error ? <Text style={styles.error}>{error}</Text> : null}
+
               <CustomButton
-                label="Login"
+                label={loading ? 'Logging in…' : 'Login'}
                 onPress={handleLogin}
                 disabled={!canSubmit}
                 style={styles.primaryBtn}
@@ -97,9 +124,8 @@ export default function LoginScreen() {
 
               <CustomButton
                 label="Continue with Google"
-                onPress={() => {}}
+                onPress={() => { }}
                 variant="outline"
-                left={<Ionicons name="logo-google" size={18} color="#D97706" style={{ backgroundColor: '#000', padding: 2, borderRadius: 10, color: '#FFF', fontSize: 14 }} />}
                 style={styles.googleBtn}
               />
             </View>
@@ -114,7 +140,6 @@ export default function LoginScreen() {
               </TouchableOpacity>
             </Link>
           </View>
-
         </ScreenContainer>
       </SafeAreaView>
     </LinearGradient>
@@ -122,120 +147,26 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  gradientBackground: {
-    flex: 1,
-  },
-  safeArea: {
-    flex: 1,
-  },
-  container: {
-    paddingHorizontal: 24,
-    paddingTop: 40,
-  },
-  scroll: {
-    paddingBottom: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexGrow: 1,
-  },
-  headerSection: {
-    alignItems: 'center',
-    marginBottom: 30,
-  },
-  brandRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-    marginBottom: 8,
-  },
-  brandIconContainer: {
-    width: 42,
-    height: 42,
-    borderRadius: 10,
-    backgroundColor: '#5C7C9E', // Slate blue matching the screenshot
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  brandText: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: '#374B6D',
-    letterSpacing: -0.5,
-  },
-  subtitle: {
-    fontSize: 15,
-    color: '#4B5563',
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    paddingHorizontal: 24,
-    paddingVertical: 32,
-    width: '100%',
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 3,
-    marginBottom: 30,
-  },
-  form: {
-    gap: 18,
-  },
-  forgotRow: {
-    alignItems: 'flex-end',
-    marginTop: -8,
-  },
-  forgotText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#374B6D',
-  },
-  primaryBtn: {
-    backgroundColor: '#6A89A7', // Soft slate blue for login button
-    height: 54,
-    borderRadius: 14,
-    marginTop: 4,
-  },
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginVertical: 4,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#E5E7EB',
-  },
-  dividerText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#9CA3AF',
-    letterSpacing: 1,
-  },
-  googleBtn: {
-    backgroundColor: '#F3F4F6',
-    borderWidth: 0,
-    height: 54,
-    borderRadius: 14,
-  },
-  footerRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 6,
-  },
-  footerText: {
-    color: '#4B5563',
-    fontSize: 14,
-  },
-  linkText: {
-    color: '#374B6D',
-    fontSize: 14,
-    fontWeight: '700',
-  },
+  gradientBackground: { flex: 1 },
+  safeArea: { flex: 1 },
+  container: { paddingHorizontal: 24, paddingTop: 40 },
+  scroll: { paddingBottom: 40, alignItems: 'center', justifyContent: 'center', flexGrow: 1 },
+  headerSection: { alignItems: 'center', marginBottom: 30 },
+  brandRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 8 },
+  brandIconContainer: { width: 42, height: 42, borderRadius: 10, backgroundColor: '#5C7C9E', alignItems: 'center', justifyContent: 'center' },
+  brandText: { fontSize: 32, fontWeight: '800', color: '#374B6D', letterSpacing: -0.5 },
+  subtitle: { fontSize: 15, color: '#4B5563', textAlign: 'center', lineHeight: 22 },
+  card: { backgroundColor: '#FFFFFF', borderRadius: 24, paddingHorizontal: 24, paddingVertical: 32, width: '100%', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 20, shadowOffset: { width: 0, height: 10 }, elevation: 3, marginBottom: 30 },
+  form: { gap: 18 },
+  forgotRow: { alignItems: 'flex-end', marginTop: -8 },
+  forgotText: { fontSize: 13, fontWeight: '600', color: '#374B6D' },
+  error: { color: '#EF4444', fontSize: 13, marginTop: -8, textAlign: 'center' },
+  primaryBtn: { backgroundColor: '#6A89A7', height: 54, borderRadius: 14, marginTop: 4 },
+  dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 4 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: '#E5E7EB' },
+  dividerText: { fontSize: 12, fontWeight: '600', color: '#9CA3AF', letterSpacing: 1 },
+  googleBtn: { backgroundColor: '#F3F4F6', borderWidth: 0, height: 54, borderRadius: 14 },
+  footerRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6 },
+  footerText: { color: '#4B5563', fontSize: 14 },
+  linkText: { color: '#374B6D', fontSize: 14, fontWeight: '700' },
 });

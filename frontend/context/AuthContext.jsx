@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { apiRequest } from '@/lib/api';
+import { apiRequest, setAuthToken } from '@/lib/api';
 
 const TOKEN_KEY = '@signease_token';
 const USER_KEY = '@signease_user';
@@ -12,14 +12,16 @@ export function AuthProvider({ children }) {
   const [token, setTokenState] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const setToken = async (newToken) => {
+  // Persists token both in state AND in the api.js global so all requests are authenticated
+  const persistToken = async (newToken) => {
+    setAuthToken(newToken);          // ← wires into api.js immediately
+    setTokenState(newToken);
     if (newToken) {
       await AsyncStorage.setItem(TOKEN_KEY, newToken);
     } else {
       await AsyncStorage.removeItem(TOKEN_KEY);
       await AsyncStorage.removeItem(USER_KEY);
     }
-    setTokenState(newToken);
   };
 
   const loadStoredAuth = async () => {
@@ -29,6 +31,7 @@ export function AuthProvider({ children }) {
         AsyncStorage.getItem(USER_KEY),
       ]);
       if (storedToken && storedUser) {
+        setAuthToken(storedToken);   // ← restore into api.js on app restart
         setTokenState(storedToken);
         setUser(JSON.parse(storedUser));
       }
@@ -48,7 +51,7 @@ export function AuthProvider({ children }) {
       method: 'POST',
       body: JSON.stringify({ fullName, email, password }),
     });
-    await setToken(data.token);
+    await persistToken(data.token);
     setUser(data.user);
     await AsyncStorage.setItem(USER_KEY, JSON.stringify(data.user));
     return data;
@@ -59,7 +62,7 @@ export function AuthProvider({ children }) {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
-    await setToken(data.token);
+    await persistToken(data.token);
     setUser(data.user);
     await AsyncStorage.setItem(USER_KEY, JSON.stringify(data.user));
     return data;
@@ -67,15 +70,27 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     setUser(null);
-    await setToken(null);
+    await persistToken(null);
+  };
+
+  const updateUserStats = async (updates) => {
+    try {
+      const updatedUser = await apiRequest('/api/auth/me', {
+        method: 'PUT',
+        body: JSON.stringify(updates),
+      });
+      setUser(updatedUser);
+      await AsyncStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
+      return updatedUser;
+    } catch (e) {
+      console.warn('Failed to update user stats:', e);
+    }
   };
 
   const refreshUser = async () => {
     if (!token) return;
     try {
-      const data = await apiRequest('/api/auth/me', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const data = await apiRequest('/api/auth/me');
       setUser(data);
       await AsyncStorage.setItem(USER_KEY, JSON.stringify(data));
     } catch (e) {
@@ -84,7 +99,9 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, signup, login, logout, refreshUser }}>
+    <AuthContext.Provider
+      value={{ user, token, isLoading, signup, login, logout, refreshUser, updateUserStats }}
+    >
       {children}
     </AuthContext.Provider>
   );

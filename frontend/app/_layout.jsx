@@ -6,8 +6,9 @@ import 'react-native-reanimated';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AuthProvider } from '@/context/AuthContext';
 
+// Changed from (tabs) → splash so the app always starts at the splash/login screen
 export const unstable_settings = {
-  anchor: '(tabs)',
+  anchor: 'splash',
 };
 
 export default function RootLayout() {
@@ -25,7 +26,7 @@ export default function RootLayout() {
           <Stack.Screen name="learning" options={{ title: 'Learn Sign Language' }} />
           <Stack.Screen name="practice" options={{ title: 'Practice' }} />
           <Stack.Screen name="quiz" options={{ title: 'Quiz' }} />
-          <Stack.Screen name="chatbot-tutor" options={{ title: 'Chatbot Tutor' }} />
+          <Stack.Screen name="chatbot-tutor" options={{ title: '3D Tutor' }} />
           <Stack.Screen name="profile" options={{ title: 'Profile' }} />
           <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
         </Stack>
@@ -34,4 +35,3 @@ export default function RootLayout() {
     </ThemeProvider>
   );
 }
-

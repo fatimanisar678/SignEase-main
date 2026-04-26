@@ -38,12 +38,10 @@ export default function SignupScreen() {
     }
     setLoading(true);
     try {
-      if (signup) {
-        await signup(fullName.trim(), email.trim(), password);
-      }
+      await signup(fullName.trim(), email.trim(), password);
       router.replace('/(tabs)');
     } catch (err) {
-      setError(err.message || 'Signup failed');
+      setError(err.message || 'Signup failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -57,40 +55,34 @@ export default function SignupScreen() {
       style={styles.gradientBackground}
     >
       <SafeAreaView style={styles.safeArea}>
-        
-        {/* Custom Header Navigation */}
         <View style={styles.topHeader}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color="#3B82F6" />
           </TouchableOpacity>
           <Text style={styles.topHeaderText}>SignEase</Text>
-          <View style={{ width: 24 }} /> {/* Spacer to center title */}
+          <View style={{ width: 24 }} />
         </View>
 
-        <ScreenContainer 
-          style={styles.container} 
-          containerStyle={{ backgroundColor: 'transparent' }} 
-          scrollable 
+        <ScreenContainer
+          style={styles.container}
+          containerStyle={{ backgroundColor: 'transparent' }}
+          scrollable
           contentContainerStyle={styles.scroll}
         >
-          {/* Titles */}
           <View style={styles.headerSection}>
             <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>Start your learning journey</Text>
+            <Text style={styles.subtitle}>Start your sign language journey</Text>
           </View>
 
-          {/* Signup Card */}
           <View style={styles.card}>
             <View style={styles.form}>
-              
               <CustomInput
                 label="Full Name"
                 value={fullName}
                 onChangeText={setFullName}
-                placeholder="John Doe"
+                placeholder="Jane Doe"
                 left={<Ionicons name="person" size={18} color="#6B7280" />}
               />
-
               <CustomInput
                 label="Email"
                 value={email}
@@ -100,39 +92,48 @@ export default function SignupScreen() {
                 autoCapitalize="none"
                 left={<Ionicons name="mail" size={18} color="#6B7280" />}
               />
-
               <CustomInput
                 label="Password"
                 value={password}
                 onChangeText={setPassword}
-                placeholder="••••••••"
+                placeholder="Min. 6 characters"
                 secureTextEntry
                 left={<Ionicons name="lock-closed" size={18} color="#6B7280" />}
               />
-
               <CustomInput
                 label="Confirm Password"
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
-                placeholder="••••••••"
+                placeholder="Repeat your password"
                 secureTextEntry
-                left={<Ionicons name="sync" size={18} color="#6B7280" />}
+                left={<Ionicons name="shield-checkmark" size={18} color="#6B7280" />}
               />
 
-              {/* Checkbox row */}
-              <TouchableOpacity style={styles.checkboxRow} activeOpacity={0.8} onPress={() => setAgreed(!agreed)}>
+              <TouchableOpacity
+                style={styles.checkboxRow}
+                activeOpacity={0.8}
+                onPress={() => setAgreed(!agreed)}
+              >
                 <View style={[styles.checkbox, agreed && styles.checkboxChecked]}>
                   {agreed && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
                 </View>
                 <Text style={styles.checkboxText}>
-                  I agree to the <Text style={styles.linkTextBlue}>Terms & Conditions</Text> and <Text style={styles.linkTextBlue}>Privacy Policy</Text>
+                  I agree to the{' '}
+                  <Text style={styles.linkTextBlue}>Terms & Conditions</Text>
+                  {' '}and{' '}
+                  <Text style={styles.linkTextBlue}>Privacy Policy</Text>
                 </Text>
               </TouchableOpacity>
 
-              {error ? <Text style={styles.error}>{error}</Text> : null}
+              {error ? (
+                <View style={styles.errorBox}>
+                  <Ionicons name="alert-circle" size={16} color="#EF4444" style={{ marginRight: 6 }} />
+                  <Text style={styles.error}>{error}</Text>
+                </View>
+              ) : null}
 
               <CustomButton
-                label="Sign Up"
+                label={loading ? 'Creating account…' : 'Sign Up'}
                 onPress={handleSignup}
                 disabled={loading}
                 style={styles.primaryBtn}
@@ -146,16 +147,13 @@ export default function SignupScreen() {
 
               <CustomButton
                 label="Continue with Google"
-                onPress={() => {}}
+                onPress={() => { }}
                 variant="outline"
-                left={<Ionicons name="logo-google" size={18} color="#D97706" style={{ backgroundColor: '#000', padding: 2, borderRadius: 10, color: '#FFF', fontSize: 14 }} />}
                 style={styles.googleBtn}
               />
-
             </View>
           </View>
 
-          {/* Footer Section */}
           <View style={styles.footerRow}>
             <Text style={styles.footerText}>Already have an account?</Text>
             <Link href="/login" asChild>
@@ -164,7 +162,6 @@ export default function SignupScreen() {
               </TouchableOpacity>
             </Link>
           </View>
-
         </ScreenContainer>
       </SafeAreaView>
     </LinearGradient>
@@ -172,143 +169,31 @@ export default function SignupScreen() {
 }
 
 const styles = StyleSheet.create({
-  gradientBackground: {
-    flex: 1,
-  },
-  safeArea: {
-    flex: 1,
-  },
-  topHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 20,
-  },
-  backButton: {
-    padding: 4,
-  },
-  topHeaderText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#3B82F6',
-  },
-  container: {
-    paddingHorizontal: 24,
-  },
-  scroll: {
-    paddingBottom: 40,
-    alignItems: 'center',
-  },
-  headerSection: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: '#0F172A',
-    marginBottom: 6,
-  },
-  subtitle: {
-    fontSize: 15,
-    color: '#4B5563',
-  },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    paddingHorizontal: 24,
-    paddingVertical: 32,
-    width: '100%',
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 3,
-    marginBottom: 30,
-  },
-  form: {
-    gap: 16,
-  },
-  checkboxRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4,
-    marginBottom: 4,
-  },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 6,
-    borderWidth: 1.5,
-    borderColor: '#CBD5E1',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 10,
-  },
-  checkboxChecked: {
-    backgroundColor: '#3B82F6',
-    borderColor: '#3B82F6',
-  },
-  checkboxText: {
-    flex: 1,
-    fontSize: 12,
-    color: '#475569',
-    lineHeight: 18,
-  },
-  linkTextBlue: {
-    color: '#374B6D',
-    fontWeight: '600',
-  },
-  primaryBtn: {
-    backgroundColor: '#6A89A7',
-    height: 54,
-    borderRadius: 14,
-    marginTop: 8,
-  },
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginVertical: 4,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#E5E7EB',
-  },
-  dividerText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#9CA3AF',
-    letterSpacing: 1,
-  },
-  googleBtn: {
-    backgroundColor: '#F3F4F6',
-    borderWidth: 0,
-    height: 54,
-    borderRadius: 14,
-  },
-  footerRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 6,
-  },
-  footerText: {
-    color: '#4B5563',
-    fontSize: 14,
-  },
-  linkTextDark: {
-    color: '#374B6D',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  error: {
-    color: '#EF4444',
-    fontSize: 13,
-    marginTop: -8,
-  },
+  gradientBackground: { flex: 1 },
+  safeArea: { flex: 1 },
+  topHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 10, paddingBottom: 20 },
+  backButton: { padding: 4 },
+  topHeaderText: { fontSize: 18, fontWeight: '700', color: '#3B82F6' },
+  container: { paddingHorizontal: 24 },
+  scroll: { paddingBottom: 40, alignItems: 'center' },
+  headerSection: { alignItems: 'center', marginBottom: 24 },
+  title: { fontSize: 32, fontWeight: '800', color: '#0F172A', marginBottom: 6 },
+  subtitle: { fontSize: 15, color: '#4B5563' },
+  card: { backgroundColor: '#FFFFFF', borderRadius: 24, paddingHorizontal: 24, paddingVertical: 32, width: '100%', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 20, shadowOffset: { width: 0, height: 10 }, elevation: 3, marginBottom: 30 },
+  form: { gap: 16 },
+  checkboxRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4, marginBottom: 4 },
+  checkbox: { width: 20, height: 20, borderRadius: 6, borderWidth: 1.5, borderColor: '#CBD5E1', justifyContent: 'center', alignItems: 'center', marginRight: 10, flexShrink: 0 },
+  checkboxChecked: { backgroundColor: '#3B82F6', borderColor: '#3B82F6' },
+  checkboxText: { flex: 1, fontSize: 12, color: '#475569', lineHeight: 18 },
+  linkTextBlue: { color: '#374B6D', fontWeight: '600' },
+  errorBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FEF2F2', padding: 10, borderRadius: 10 },
+  error: { color: '#EF4444', fontSize: 13, flex: 1 },
+  primaryBtn: { backgroundColor: '#6A89A7', height: 54, borderRadius: 14, marginTop: 8 },
+  dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 4 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: '#E5E7EB' },
+  dividerText: { fontSize: 12, fontWeight: '600', color: '#9CA3AF', letterSpacing: 1 },
+  googleBtn: { backgroundColor: '#F3F4F6', borderWidth: 0, height: 54, borderRadius: 14 },
+  footerRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6 },
+  footerText: { color: '#4B5563', fontSize: 14 },
+  linkTextDark: { color: '#374B6D', fontSize: 14, fontWeight: '700' },
 });
-
