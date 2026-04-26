@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, SafeAreaView } from 'react-native';
 import { Link, router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import ScreenContainer from '@/components/ScreenContainer';
-import PrimaryButton from '@/components/PrimaryButton';
+import CustomButton from '@/components/CustomButton';
+import CustomInput from '@/components/CustomInput';
 import { useAuth } from '@/context/AuthContext';
 
 export default function SignupScreen() {
@@ -10,6 +13,7 @@ export default function SignupScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { signup } = useAuth();
@@ -28,9 +32,15 @@ export default function SignupScreen() {
       setError('Password must be at least 6 characters');
       return;
     }
+    if (!agreed) {
+      setError('You must agree to the Terms & Conditions');
+      return;
+    }
     setLoading(true);
     try {
-      await signup(fullName.trim(), email.trim(), password);
+      if (signup) {
+        await signup(fullName.trim(), email.trim(), password);
+      }
       router.replace('/(tabs)');
     } catch (err) {
       setError(err.message || 'Signup failed');
@@ -40,131 +50,265 @@ export default function SignupScreen() {
   };
 
   return (
-    <ScreenContainer scrollable style={styles.container}>
-      <Text style={styles.title}>Create your account</Text>
-      <Text style={styles.subtitle}>
-        Join SignEase to start learning, practicing, and translating sign language.
-      </Text>
-
-      <View style={styles.form}>
-        <Text style={styles.label}>Full Name</Text>
-        <TextInput
-          value={fullName}
-          onChangeText={setFullName}
-          placeholder="John Doe"
-          style={styles.input}
-          placeholderTextColor="#9ca3af"
-        />
-
-        <Text style={styles.label}>Email</Text>
-        <TextInput
-          value={email}
-          onChangeText={setEmail}
-          placeholder="you@example.com"
-          keyboardType="email-address"
-          autoCapitalize="none"
-          style={styles.input}
-          placeholderTextColor="#9ca3af"
-        />
-
-        <Text style={styles.label}>Password</Text>
-        <TextInput
-          value={password}
-          onChangeText={setPassword}
-          placeholder="••••••••"
-          secureTextEntry
-          style={styles.input}
-          placeholderTextColor="#9ca3af"
-        />
-
-        <Text style={styles.label}>Confirm Password</Text>
-        <TextInput
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          placeholder="••••••••"
-          secureTextEntry
-          style={styles.input}
-          placeholderTextColor="#9ca3af"
-        />
-
-        {error ? <Text style={styles.error}>{error}</Text> : null}
-        <PrimaryButton
-          label="Create Account"
-          onPress={handleSignup}
-          variant="secondary"
-          style={styles.button}
-          loading={loading}
-        />
-
-        <View style={styles.footerRow}>
-          <Text style={styles.footerText}>Already have an account?</Text>
-          <Link href="/login" asChild>
-            <Text style={styles.linkText}>Log in</Text>
-          </Link>
+    <LinearGradient
+      colors={['#E8F0F8', '#FFFFFF', '#FAF0E6']}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.gradientBackground}
+    >
+      <SafeAreaView style={styles.safeArea}>
+        
+        {/* Custom Header Navigation */}
+        <View style={styles.topHeader}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color="#3B82F6" />
+          </TouchableOpacity>
+          <Text style={styles.topHeaderText}>SignEase</Text>
+          <View style={{ width: 24 }} /> {/* Spacer to center title */}
         </View>
-      </View>
-    </ScreenContainer>
+
+        <ScreenContainer 
+          style={styles.container} 
+          containerStyle={{ backgroundColor: 'transparent' }} 
+          scrollable 
+          contentContainerStyle={styles.scroll}
+        >
+          {/* Titles */}
+          <View style={styles.headerSection}>
+            <Text style={styles.title}>Create Account</Text>
+            <Text style={styles.subtitle}>Start your learning journey</Text>
+          </View>
+
+          {/* Signup Card */}
+          <View style={styles.card}>
+            <View style={styles.form}>
+              
+              <CustomInput
+                label="Full Name"
+                value={fullName}
+                onChangeText={setFullName}
+                placeholder="John Doe"
+                left={<Ionicons name="person" size={18} color="#6B7280" />}
+              />
+
+              <CustomInput
+                label="Email"
+                value={email}
+                onChangeText={setEmail}
+                placeholder="name@example.com"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                left={<Ionicons name="mail" size={18} color="#6B7280" />}
+              />
+
+              <CustomInput
+                label="Password"
+                value={password}
+                onChangeText={setPassword}
+                placeholder="••••••••"
+                secureTextEntry
+                left={<Ionicons name="lock-closed" size={18} color="#6B7280" />}
+              />
+
+              <CustomInput
+                label="Confirm Password"
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                placeholder="••••••••"
+                secureTextEntry
+                left={<Ionicons name="sync" size={18} color="#6B7280" />}
+              />
+
+              {/* Checkbox row */}
+              <TouchableOpacity style={styles.checkboxRow} activeOpacity={0.8} onPress={() => setAgreed(!agreed)}>
+                <View style={[styles.checkbox, agreed && styles.checkboxChecked]}>
+                  {agreed && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
+                </View>
+                <Text style={styles.checkboxText}>
+                  I agree to the <Text style={styles.linkTextBlue}>Terms & Conditions</Text> and <Text style={styles.linkTextBlue}>Privacy Policy</Text>
+                </Text>
+              </TouchableOpacity>
+
+              {error ? <Text style={styles.error}>{error}</Text> : null}
+
+              <CustomButton
+                label="Sign Up"
+                onPress={handleSignup}
+                disabled={loading}
+                style={styles.primaryBtn}
+              />
+
+              <View style={styles.dividerRow}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>OR</Text>
+                <View style={styles.dividerLine} />
+              </View>
+
+              <CustomButton
+                label="Continue with Google"
+                onPress={() => {}}
+                variant="outline"
+                left={<Ionicons name="logo-google" size={18} color="#D97706" style={{ backgroundColor: '#000', padding: 2, borderRadius: 10, color: '#FFF', fontSize: 14 }} />}
+                style={styles.googleBtn}
+              />
+
+            </View>
+          </View>
+
+          {/* Footer Section */}
+          <View style={styles.footerRow}>
+            <Text style={styles.footerText}>Already have an account?</Text>
+            <Link href="/login" asChild>
+              <TouchableOpacity activeOpacity={0.7}>
+                <Text style={styles.linkTextDark}>Login</Text>
+              </TouchableOpacity>
+            </Link>
+          </View>
+
+        </ScreenContainer>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
+  gradientBackground: {
+    flex: 1,
+  },
+  safeArea: {
+    flex: 1,
+  },
+  topHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 20,
+  },
+  backButton: {
+    padding: 4,
+  },
+  topHeaderText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#3B82F6',
+  },
   container: {
     paddingHorizontal: 24,
-    paddingTop: 40,
-    paddingBottom: 24,
+  },
+  scroll: {
+    paddingBottom: 40,
+    alignItems: 'center',
+  },
+  headerSection: {
+    alignItems: 'center',
+    marginBottom: 24,
   },
   title: {
-    fontSize: 26,
-    fontWeight: '700',
-    color: '#f9fafb',
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginBottom: 6,
   },
   subtitle: {
-    marginTop: 6,
-    fontSize: 14,
-    color: '#9ca3af',
-    lineHeight: 20,
+    fontSize: 15,
+    color: '#4B5563',
+  },
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    paddingHorizontal: 24,
+    paddingVertical: 32,
+    width: '100%',
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 3,
+    marginBottom: 30,
   },
   form: {
-    marginTop: 28,
     gap: 16,
   },
-  label: {
-    fontSize: 14,
-    color: '#e5e7eb',
+  checkboxRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
     marginBottom: 4,
   },
-  input: {
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#1f2937',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 15,
-    color: '#f9fafb',
-    backgroundColor: '#020617',
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: '#CBD5E1',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
   },
-  button: {
-    marginTop: 12,
+  checkboxChecked: {
+    backgroundColor: '#3B82F6',
+    borderColor: '#3B82F6',
+  },
+  checkboxText: {
+    flex: 1,
+    fontSize: 12,
+    color: '#475569',
+    lineHeight: 18,
+  },
+  linkTextBlue: {
+    color: '#374B6D',
+    fontWeight: '600',
+  },
+  primaryBtn: {
+    backgroundColor: '#6A89A7',
+    height: 54,
+    borderRadius: 14,
+    marginTop: 8,
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginVertical: 4,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E5E7EB',
+  },
+  dividerText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#9CA3AF',
+    letterSpacing: 1,
+  },
+  googleBtn: {
+    backgroundColor: '#F3F4F6',
+    borderWidth: 0,
+    height: 54,
+    borderRadius: 14,
   },
   footerRow: {
     flexDirection: 'row',
-    justifyContent: 'flex-start',
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 18,
     gap: 6,
   },
   footerText: {
-    color: '#9ca3af',
+    color: '#4B5563',
     fontSize: 14,
   },
-  linkText: {
-    color: '#93c5fd',
+  linkTextDark: {
+    color: '#374B6D',
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   error: {
-    color: '#ef4444',
-    fontSize: 14,
+    color: '#EF4444',
+    fontSize: 13,
+    marginTop: -8,
   },
 });
 

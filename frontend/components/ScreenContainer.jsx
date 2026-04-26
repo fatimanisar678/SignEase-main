@@ -1,10 +1,10 @@
 import React from 'react';
 import { SafeAreaView, ScrollView, StyleSheet, View } from 'react-native';
 
-export default function ScreenContainer({ children, scrollable = false, style, contentContainerStyle }) {
+export default function ScreenContainer({ children, scrollable = false, style, contentContainerStyle, containerStyle }) {
   if (scrollable) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={[styles.safeArea, containerStyle]}>
         <ScrollView
           contentContainerStyle={[styles.contentContainer, contentContainerStyle]}
         >
@@ -15,7 +15,7 @@ export default function ScreenContainer({ children, scrollable = false, style, c
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, containerStyle]}>
       <View style={[styles.inner, style]}>{children}</View>
     </SafeAreaView>
   );

@@ -1,14 +1,50 @@
-import React, { useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import ScreenContainer from '@/components/ScreenContainer';
 import PrimaryButton from '@/components/PrimaryButton';
+import CameraViewLive from '@/components/CameraView';
+import { apiRequest } from '@/lib/api';
 
 export default function SignTranslatorScreen() {
-  const [detectedText, setDetectedText] = useState('Detected text will appear here...');
+  const [detectedText, setDetectedText] = useState('Point the camera at a hand sign…');
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [statusText, setStatusText] = useState('Idle');
+  const lastPredictionRef = useRef(null);
+  const lastCallAtRef = useRef(0);
 
-  const handleDetectSign = () => {
-    setDetectedText('Hello, nice to meet you!');
+  const handleDetectToggle = () => {
+    setIsTranslating((v) => !v);
+    setStatusText((t) => (t === 'Idle' ? 'Starting…' : 'Idle'));
   };
+
+  const handleFrame = useCallback(async (base64) => {
+    // extra throttle at screen-level (in addition to CameraView’s capture throttle)
+    const now = Date.now();
+    if (now - lastCallAtRef.current < 800) return;
+    lastCallAtRef.current = now;
+
+    try {
+      setStatusText('Detecting…');
+      const data = await apiRequest('/api/predict-sign', {
+        method: 'POST',
+        body: JSON.stringify({ imageBase64: base64 }),
+      });
+
+      const prediction = data?.prediction ?? null;
+      if (!prediction) {
+        setStatusText('No hand detected');
+        return;
+      }
+
+      if (prediction !== lastPredictionRef.current) {
+        lastPredictionRef.current = prediction;
+        setDetectedText(prediction === ' ' ? '(SPACE)' : prediction);
+      }
+      setStatusText('Live');
+    } catch (e) {
+      setStatusText('Network/API error');
+    }
+  }, []);
 
   return (
     <ScreenContainer style={styles.container}>
@@ -17,15 +53,18 @@ export default function SignTranslatorScreen() {
         Use your camera to translate sign language into text in real time.
       </Text>
 
-      <View style={styles.cameraPlaceholder}>
-        <Text style={styles.cameraText}>Camera Preview</Text>
-      </View>
+      <CameraViewLive style={styles.camera} isActive={isTranslating} onFrame={handleFrame} />
 
-      <PrimaryButton label="Detect Sign" onPress={handleDetectSign} style={styles.button} />
+      <PrimaryButton
+        label={isTranslating ? 'Stop Detecting' : 'Start Detecting'}
+        onPress={handleDetectToggle}
+        style={styles.button}
+      />
 
       <View style={styles.outputBox}>
-        <Text style={styles.outputLabel}>Detected Text</Text>
+        <Text style={styles.outputLabel}>Detected</Text>
         <Text style={styles.outputText}>{detectedText}</Text>
+        <Text style={styles.statusText}>Status: {statusText}</Text>
       </View>
     </ScreenContainer>
   );
@@ -49,18 +88,9 @@ const styles = StyleSheet.create({
   },
   cameraPlaceholder: {
     marginTop: 24,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderStyle: 'dashed',
-    borderColor: '#4b5563',
-    backgroundColor: '#020617',
-    height: 260,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
-  cameraText: {
-    color: '#6b7280',
-    fontSize: 16,
+  camera: {
+    marginTop: 24,
   },
   button: {
     marginTop: 20,
@@ -81,6 +111,11 @@ const styles = StyleSheet.create({
   outputText: {
     fontSize: 16,
     color: '#e5e7eb',
+  },
+  statusText: {
+    marginTop: 8,
+    fontSize: 12,
+    color: '#9ca3af',
   },
 });
 

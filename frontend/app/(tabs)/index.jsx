@@ -1,6 +1,7 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, Image, ScrollView } from 'react-native';
 import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import ScreenContainer from '@/components/ScreenContainer';
 
 export default function HomeDashboardScreen() {
@@ -9,131 +10,381 @@ export default function HomeDashboardScreen() {
   };
 
   return (
-    <ScreenContainer style={styles.container} scrollable contentContainerStyle={styles.scroll}>
-      <View style={styles.header}>
-        <Text style={styles.greeting}>Hi, SignEase Learner 👋</Text>
-        <Text style={styles.subtitle}>What would you like to work on today?</Text>
+    <ScreenContainer 
+      containerStyle={styles.safeAreaOverride} 
+      style={styles.container} 
+      scrollable 
+      contentContainerStyle={styles.scroll}
+    >
+      {/* Top Bar */}
+      <View style={styles.topBar}>
+        <View style={styles.userInfo}>
+          <Image 
+            source={{ uri: 'https://i.pravatar.cc/100?img=11' }} 
+            style={styles.avatar} 
+          />
+          <Text style={styles.appName}>SignEase</Text>
+        </View>
+        <TouchableOpacity style={styles.notificationBtn}>
+          <Ionicons name="notifications" size={24} color="#8BA3C0" />
+        </TouchableOpacity>
       </View>
 
-      <View style={styles.cardGrid}>
-        <TouchableOpacity
-          style={[styles.card, styles.cardAccentPrimary]}
-          onPress={() => handleNavigate('/sign-translator')}
-        >
-          <Text style={styles.cardTitle}>Sign Translator</Text>
-          <Text style={styles.cardDescription}>
-            Point your camera and see real-time text from signs.
-          </Text>
-        </TouchableOpacity>
+      {/* Greeting */}
+      <View style={styles.header}>
+        <Text style={styles.greeting}>Hello, Alex!</Text>
+        <Text style={styles.subtitle}>Ready to continue your sign language journey today?</Text>
+      </View>
 
-        <TouchableOpacity
-          style={[styles.card, styles.cardAccentSecondary]}
-          onPress={() => handleNavigate('/learning')}
-        >
-          <Text style={styles.cardTitle}>Learn Sign Language</Text>
-          <Text style={styles.cardDescription}>
-            Structured lessons to build your signing foundations.
-          </Text>
-        </TouchableOpacity>
+      {/* Stats Cards */}
+      <View style={styles.statsContainer}>
+        {/* Level Card */}
+        <View style={styles.levelCard}>
+          <View style={styles.levelHeader}>
+            <Text style={styles.levelLabel}>Your Level</Text>
+            <View style={styles.beginnerBadge}>
+              <Text style={styles.beginnerText}>Beginner</Text>
+            </View>
+          </View>
+          <View style={styles.levelInfo}>
+            <Text style={styles.levelValue}>Level 4</Text>
+            <Text style={styles.xpText}>420/600 XP</Text>
+          </View>
+          <View style={styles.progressBarBackground}>
+            <View style={[styles.progressBarFill, { width: '70%' }]} />
+          </View>
+        </View>
 
-        <TouchableOpacity
-          style={styles.card}
-          onPress={() => handleNavigate('/practice')}
-        >
-          <Text style={styles.cardTitle}>Practice</Text>
-          <Text style={styles.cardDescription}>
-            Short daily exercises to keep skills sharp.
-          </Text>
-        </TouchableOpacity>
+        {/* Streak Card */}
+        <View style={styles.streakCard}>
+          <View>
+            <Text style={styles.streakLabel}>Current Streak</Text>
+            <View style={styles.streakValueContainer}>
+              <Text style={styles.streakValue}>12</Text>
+              <Text style={styles.streakDays}>days</Text>
+            </View>
+          </View>
+          <View style={styles.fireIconContainer}>
+            <Ionicons name="flame" size={24} color="#784212" />
+          </View>
+        </View>
+      </View>
 
-        <TouchableOpacity
-          style={styles.card}
-          onPress={() => handleNavigate('/quiz')}
-        >
-          <Text style={styles.cardTitle}>Quiz</Text>
-          <Text style={styles.cardDescription}>
-            Test your knowledge with quick quizzes.
-          </Text>
-        </TouchableOpacity>
+      {/* Quick Actions */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Quick Actions</Text>
+        <View style={styles.actionsList}>
+          
+          <TouchableOpacity style={styles.actionCard} onPress={() => handleNavigate('/sign-translator')} activeOpacity={0.7}>
+            <View style={[styles.actionIconContainer, { backgroundColor: '#CDE0F5' }]}>
+              <Ionicons name="videocam" size={24} color="#4A628A" />
+            </View>
+            <View style={styles.actionTextContainer}>
+              <Text style={styles.actionTitle}>Start Translation</Text>
+              <Text style={styles.actionSubtitle}>Instant sign-to-text conversion</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#94A3B8" />
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.card}
-          onPress={() => handleNavigate('/chatbot-tutor')}
-        >
-          <Text style={styles.cardTitle}>Chatbot Tutor</Text>
-          <Text style={styles.cardDescription}>
-            Ask questions and get instant sign language help.
-          </Text>
-        </TouchableOpacity>
+          <TouchableOpacity style={styles.actionCard} onPress={() => handleNavigate('/learning')} activeOpacity={0.7}>
+            <View style={[styles.actionIconContainer, { backgroundColor: '#CDE0F5' }]}>
+              <Ionicons name="school" size={24} color="#4A628A" />
+            </View>
+            <View style={styles.actionTextContainer}>
+              <Text style={styles.actionTitle}>Learn Sign Language</Text>
+              <Text style={styles.actionSubtitle}>New lesson: Basic Greetings</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#94A3B8" />
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.card}
-          onPress={() => handleNavigate('/profile')}
-        >
-          <Text style={styles.cardTitle}>Profile</Text>
-          <Text style={styles.cardDescription}>
-            View your progress, streaks, and quiz scores.
-          </Text>
-        </TouchableOpacity>
+          <TouchableOpacity style={styles.actionCard} onPress={() => handleNavigate('/chatbot-tutor')} activeOpacity={0.7}>
+            <View style={[styles.actionIconContainer, { backgroundColor: '#FADEC9' }]}>
+              <Ionicons name="chatbubbles" size={24} color="#784212" />
+            </View>
+            <View style={styles.actionTextContainer}>
+              <Text style={styles.actionTitle}>Chat with Tutor</Text>
+              <Text style={styles.actionSubtitle}>Get live help from experts</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#94A3B8" />
+          </TouchableOpacity>
+
+        </View>
+      </View>
+
+      {/* Picked for you */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionTitle}>Picked for you</Text>
+          <TouchableOpacity>
+            <Text style={styles.seeAllText}>See all</Text>
+          </TouchableOpacity>
+        </View>
+        
+        <View style={styles.pickedCard}>
+          <View style={styles.pickedContent}>
+            <Text style={styles.expertTip}>EXPERT TIP</Text>
+            <Text style={styles.pickedTitle}>Mastering Facial Expressions</Text>
+            <Text style={styles.pickedSubtitle}>Why eyebrows matter in ASL syntax.</Text>
+          </View>
+          <View style={styles.pickedImageContainer}>
+            {/* Dummy representation of the hand image using icon or color */}
+            <Ionicons name="hand-right" size={80} color="#C4B5A5" style={{ transform: [{ rotate: '15deg' }], marginTop: 20 }} />
+          </View>
+        </View>
       </View>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
+  safeAreaOverride: {
+    backgroundColor: '#F8F9FA', // Very light grey/white background
+  },
   container: {
     paddingHorizontal: 20,
-    paddingTop: 28,
-    paddingBottom: 32,
+    paddingTop: 10,
   },
   scroll: {
-    paddingBottom: 32,
+    paddingBottom: 40,
+  },
+  topBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 25,
+  },
+  userInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  avatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#D6E4F0',
+  },
+  appName: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#3B82F6', // Brighter blue
+  },
+  notificationBtn: {
+    padding: 4,
   },
   header: {
-    marginBottom: 20,
+    marginBottom: 25,
   },
   greeting: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#f9fafb',
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginBottom: 8,
   },
   subtitle: {
-    marginTop: 6,
-    fontSize: 14,
-    color: '#9ca3af',
+    fontSize: 15,
+    color: '#475569',
+    lineHeight: 22,
   },
-  cardGrid: {
+  statsContainer: {
+    gap: 15,
+    marginBottom: 30,
+  },
+  levelCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  levelHeader: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     justifyContent: 'space-between',
-    rowGap: 16,
+    alignItems: 'center',
+    marginBottom: 10,
   },
-  card: {
-    width: '48%',
-    backgroundColor: '#0b1120',
-    borderRadius: 16,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: '#1f2937',
-  },
-  cardAccentPrimary: {
-    backgroundColor: '#1e293b',
-    borderColor: '#2563eb',
-  },
-  cardAccentSecondary: {
-    backgroundColor: '#022c22',
-    borderColor: '#22c55e',
-  },
-  cardTitle: {
-    fontSize: 16,
+  levelLabel: {
+    fontSize: 14,
     fontWeight: '600',
-    color: '#e5e7eb',
-    marginBottom: 6,
+    color: '#475569',
   },
-  cardDescription: {
+  beginnerBadge: {
+    backgroundColor: '#D6E6F5',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  beginnerText: {
+    color: '#4A628A',
     fontSize: 12,
-    color: '#9ca3af',
+    fontWeight: '600',
+  },
+  levelInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
+    marginBottom: 12,
+  },
+  levelValue: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#2A4B6B',
+  },
+  xpText: {
+    fontSize: 12,
+    color: '#475569',
+    fontWeight: '500',
+  },
+  progressBarBackground: {
+    height: 8,
+    backgroundColor: '#E2E8F0',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#8BA3C0',
+    borderRadius: 4,
+  },
+  streakCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  streakLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#475569',
+    marginBottom: 4,
+  },
+  streakValueContainer: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 6,
+  },
+  streakValue: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#784212',
+  },
+  streakDays: {
+    fontSize: 15,
+    color: '#475569',
+    fontWeight: '500',
+  },
+  fireIconContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 16,
+    backgroundColor: '#FADEC9',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  section: {
+    marginBottom: 30,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#0F172A',
+    marginBottom: 16, // Default margin for sections without See All
+  },
+  seeAllText: {
+    color: '#4A628A',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  actionsList: {
+    gap: 12,
+  },
+  actionCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 1,
+  },
+  actionIconContainer: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  actionTextContainer: {
+    flex: 1,
+  },
+  actionTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#0F172A',
+    marginBottom: 4,
+  },
+  actionSubtitle: {
+    fontSize: 13,
+    color: '#64748B',
     lineHeight: 18,
+  },
+  pickedCard: {
+    backgroundColor: '#446688', // Dark slate blue
+    borderRadius: 24,
+    flexDirection: 'row',
+    overflow: 'hidden',
+    height: 160,
+  },
+  pickedContent: {
+    flex: 1,
+    padding: 20,
+    justifyContent: 'center',
+    backgroundColor: '#557A9D',
+  },
+  expertTip: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#D6E6F5',
+    letterSpacing: 0.5,
+    marginBottom: 8,
+  },
+  pickedTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 8,
+    lineHeight: 26,
+  },
+  pickedSubtitle: {
+    fontSize: 12,
+    color: '#E2E8F0',
+    lineHeight: 16,
+  },
+  pickedImageContainer: {
+    width: '40%',
+    backgroundColor: '#1E2F40', // Darker blue
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 
