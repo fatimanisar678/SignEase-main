@@ -11,16 +11,21 @@ import { useAuth } from '@/context/AuthContext';
 
 // 10 solid ASL quiz questions with working GIF URLs
 const MOCK_QUESTIONS = [
+  // WORDS
   { id: 'q1', prompt: 'What word does this sign mean?', mediaUrl: 'https://www.lifeprint.com/asl101/gifs/h/hello.gif', options: ['Goodbye', 'Please', 'Hello', 'Sorry'], correctIndex: 2 },
   { id: 'q2', prompt: 'Identify this common sign.', mediaUrl: 'https://www.lifeprint.com/asl101/gifs/t/thank-you.gif', options: ['Thank You', 'Welcome', 'Excuse Me', 'No'], correctIndex: 0 },
-  { id: 'q3', prompt: 'Which word is shown here?', mediaUrl: 'https://www.lifeprint.com/asl101/gifs/p/please.gif', options: ['Sorry', 'Please', 'Yes', 'Help'], correctIndex: 1 },
-  { id: 'q4', prompt: 'What does this gesture mean?', mediaUrl: 'https://www.lifeprint.com/asl101/gifs/s/sorry.gif', options: ['Please', 'Thank You', 'Sorry', 'Hello'], correctIndex: 2 },
-  { id: 'q5', prompt: 'Identify the word being signed:', mediaUrl: 'https://www.lifeprint.com/asl101/gifs/y/yes.gif', options: ['No', 'Yes', 'Maybe', 'Always'], correctIndex: 1 },
-  { id: 'q6', prompt: 'Which of the following is this?', mediaUrl: 'https://www.lifeprint.com/asl101/gifs/n/no.gif', options: ['Stop', 'No', 'Wait', 'Never'], correctIndex: 1 },
-  { id: 'q7', prompt: 'What word does this sign represent?', mediaUrl: 'https://www.lifeprint.com/asl101/gifs/h/help.gif', options: ['Help', 'Work', 'Friend', 'Play'], correctIndex: 0 },
-  { id: 'q8', prompt: 'Identify this sign.', mediaUrl: 'https://www.lifeprint.com/asl101/gifs/w/water.gif', options: ['Food', 'Milk', 'Juice', 'Water'], correctIndex: 3 },
-  { id: 'q9', prompt: 'Which word is shown here?', mediaUrl: 'https://www.lifeprint.com/asl101/gifs/f/friend.gif', options: ['Enemy', 'Family', 'Friend', 'Teacher'], correctIndex: 2 },
-  { id: 'q10', prompt: 'What does this sign mean?', mediaUrl: 'https://www.lifeprint.com/asl101/gifs/m/more.gif', options: ['More', 'Less', 'Done', 'All'], correctIndex: 0 },
+  
+  // ALPHABET
+  { id: 'q3', prompt: 'Which letter is being signed here?', mediaUrl: 'https://www.lifeprint.com/asl101/fingerspelling/abc-gifs/a.gif', options: ['A', 'B', 'S', 'O'], correctIndex: 0 },
+  { id: 'q4', prompt: 'Identify this letter:', mediaUrl: 'https://www.lifeprint.com/asl101/fingerspelling/abc-gifs/b.gif', options: ['D', 'F', 'B', 'K'], correctIndex: 2 },
+  { id: 'q5', prompt: 'What alphabet is this?', mediaUrl: 'https://www.lifeprint.com/asl101/fingerspelling/abc-gifs/c.gif', options: ['G', 'C', 'O', 'Q'], correctIndex: 1 },
+
+  // NUMBERS
+  { id: 'q6', prompt: 'What number is being signed?', mediaUrl: 'https://www.lifeprint.com/asl101/gifs-animated/number01.gif', options: ['1', '2', '3', '4'], correctIndex: 0 },
+  { id: 'q7', prompt: 'Identify this number:', mediaUrl: 'https://www.lifeprint.com/asl101/gifs-animated/number02.gif', options: ['5', '2', '8', '0'], correctIndex: 1 },
+  { id: 'q8', prompt: 'What number does this represent?', mediaUrl: 'https://www.lifeprint.com/asl101/gifs-animated/number03.gif', options: ['6', '9', '3', '1'], correctIndex: 2 },
+  { id: 'q9', prompt: 'Which number is this?', mediaUrl: 'https://www.lifeprint.com/asl101/gifs-animated/number05.gif', options: ['10', '5', '4', '7'], correctIndex: 1 },
+  { id: 'q10', prompt: 'Identify the word being signed:', mediaUrl: 'https://www.lifeprint.com/asl101/gifs/y/yes.gif', options: ['No', 'Yes', 'Maybe', 'Always'], correctIndex: 1 },
 ];
 
 const optionPrefixes = ['A', 'B', 'C', 'D'];
@@ -174,7 +179,7 @@ export default function QuizScreen() {
   const progressPercent = ((currentIndex + 1) / questions.length) * 100;
 
   return (
-    <ScreenContainer containerStyle={styles.safeAreaOverride} style={styles.container}>
+    <ScreenContainer scrollable containerStyle={styles.safeAreaOverride} style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
@@ -204,7 +209,13 @@ export default function QuizScreen() {
       {/* Media */}
       <View style={styles.mediaContainer}>
         <View style={styles.mediaBackground}>
-          <Image source={{ uri: currentQuestion.mediaUrl }} style={styles.mediaImage} resizeMode="cover" />
+          <Image 
+            source={{ uri: currentQuestion.mediaUrl }} 
+            style={styles.mediaImage} 
+            resizeMode="contain" 
+            key={currentQuestion.mediaUrl}
+          />
+          {!hasSubmitted && <ActivityIndicator size="small" color="#4A628A" style={{ position: 'absolute', zIndex: -1 }} />}
         </View>
       </View>
 
@@ -261,7 +272,8 @@ export default function QuizScreen() {
         <PrimaryButton
           label={hasSubmitted ? 'Next Question' : 'Check Answer'}
           onPress={hasSubmitted ? handleNext : handleSubmit}
-          style={styles.checkButton}
+          style={[styles.checkButton, hasSubmitted && { backgroundColor: '#4A628A' }]}
+          disabled={selectedIndex === null}
         />
         {!hasSubmitted && (
           <TouchableOpacity style={styles.hintContainer}>
@@ -273,6 +285,7 @@ export default function QuizScreen() {
     </ScreenContainer>
   );
 }
+
 
 const styles = StyleSheet.create({
   safeAreaOverride: { backgroundColor: '#FAFAFA' },

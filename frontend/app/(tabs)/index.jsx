@@ -1,13 +1,24 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, Image, ScrollView } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, Image } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import ScreenContainer from '@/components/ScreenContainer';
+import { useAuth } from '@/context/AuthContext';
 
 export default function HomeDashboardScreen() {
+  const { user } = useAuth();
+
   const handleNavigate = (path) => {
     router.push(path);
   };
+
+  // Get real user data or defaults
+  const fullName = user?.fullName || 'Guest';
+  const firstName = fullName.split(' ')[0];
+  const level = user?.level || 'Beginner';
+  const streakDays = user?.streakDays || 0;
+  const lessonsCompleted = user?.lessonsCompleted || 0;
+  const quizScore = user?.quizScore || '0%';
 
   return (
     <ScreenContainer 
@@ -18,13 +29,13 @@ export default function HomeDashboardScreen() {
     >
       {/* Top Bar */}
       <View style={styles.topBar}>
-        <View style={styles.userInfo}>
+        <TouchableOpacity style={styles.userInfo} onPress={() => handleNavigate('/profile')}>
           <Image 
-            source={{ uri: 'https://i.pravatar.cc/100?img=11' }} 
-            style={styles.avatar} 
+            source={require('../../assets/images/logo.png')} 
+            style={styles.logoIcon}
           />
           <Text style={styles.appName}>SignEase</Text>
-        </View>
+        </TouchableOpacity>
         <TouchableOpacity style={styles.notificationBtn}>
           <Ionicons name="notifications" size={24} color="#8BA3C0" />
         </TouchableOpacity>
@@ -32,7 +43,7 @@ export default function HomeDashboardScreen() {
 
       {/* Greeting */}
       <View style={styles.header}>
-        <Text style={styles.greeting}>Hello, Alex!</Text>
+        <Text style={styles.greeting}>Hello, {firstName}!</Text>
         <Text style={styles.subtitle}>Ready to continue your sign language journey today?</Text>
       </View>
 
@@ -43,15 +54,15 @@ export default function HomeDashboardScreen() {
           <View style={styles.levelHeader}>
             <Text style={styles.levelLabel}>Your Level</Text>
             <View style={styles.beginnerBadge}>
-              <Text style={styles.beginnerText}>Beginner</Text>
+              <Text style={styles.beginnerText}>{level}</Text>
             </View>
           </View>
           <View style={styles.levelInfo}>
-            <Text style={styles.levelValue}>Level 4</Text>
-            <Text style={styles.xpText}>420/600 XP</Text>
+            <Text style={styles.levelValue}>Exp: {lessonsCompleted * 10}</Text>
+            <Text style={styles.xpText}>{lessonsCompleted} Lessons Done</Text>
           </View>
           <View style={styles.progressBarBackground}>
-            <View style={[styles.progressBarFill, { width: '70%' }]} />
+            <View style={[styles.progressBarFill, { width: `${Math.min(lessonsCompleted * 10, 100)}%` }]} />
           </View>
         </View>
 
@@ -60,7 +71,7 @@ export default function HomeDashboardScreen() {
           <View>
             <Text style={styles.streakLabel}>Current Streak</Text>
             <View style={styles.streakValueContainer}>
-              <Text style={styles.streakValue}>12</Text>
+              <Text style={styles.streakValue}>{streakDays}</Text>
               <Text style={styles.streakDays}>days</Text>
             </View>
           </View>
@@ -92,7 +103,18 @@ export default function HomeDashboardScreen() {
             </View>
             <View style={styles.actionTextContainer}>
               <Text style={styles.actionTitle}>Learn Sign Language</Text>
-              <Text style={styles.actionSubtitle}>New lesson: Basic Greetings</Text>
+              <Text style={styles.actionSubtitle}>Practice your vocabulary</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#94A3B8" />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.actionCard} onPress={() => handleNavigate('/quiz')} activeOpacity={0.7}>
+            <View style={[styles.actionIconContainer, { backgroundColor: '#FEF3C7' }]}>
+              <Ionicons name="trophy" size={24} color="#D97706" />
+            </View>
+            <View style={styles.actionTextContainer}>
+              <Text style={styles.actionTitle}>Test Your Skills</Text>
+              <Text style={styles.actionSubtitle}>Last score: {quizScore}</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color="#94A3B8" />
           </TouchableOpacity>
@@ -102,14 +124,15 @@ export default function HomeDashboardScreen() {
               <Ionicons name="chatbubbles" size={24} color="#784212" />
             </View>
             <View style={styles.actionTextContainer}>
-              <Text style={styles.actionTitle}>Chat with Tutor</Text>
-              <Text style={styles.actionSubtitle}>Get live help from experts</Text>
+              <Text style={styles.actionTitle}>Chat with AI Tutor</Text>
+              <Text style={styles.actionSubtitle}>Get help with your learning</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color="#94A3B8" />
           </TouchableOpacity>
 
         </View>
       </View>
+
 
       {/* Picked for you */}
       <View style={styles.section}>
@@ -158,11 +181,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
-  avatar: {
+  logoIcon: {
     width: 36,
     height: 36,
-    borderRadius: 18,
-    backgroundColor: '#D6E4F0',
+    borderRadius: 8,
   },
   appName: {
     fontSize: 18,

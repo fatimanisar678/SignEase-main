@@ -4,6 +4,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Speech from 'expo-speech';
 
 // Use 10.0.2.2 for Android emulator to access PC localhost, otherwise use localhost or actual IP
 const API_URL = Platform.OS === 'android' ? 'http://10.0.2.2:8000/predict-sign' : 'http://localhost:8000/predict-sign';
@@ -64,6 +65,7 @@ export default function PracticeScreen() {
           // Check if the prediction matches our target letter
           if (data.prediction.toUpperCase() === targetLetter.toUpperCase()) {
             setIsSuccess(true);
+            Speech.speak("Perfect! You got it right.", { rate: 1.0 });
             // Here you could also call a backend API to save progress
           }
         }

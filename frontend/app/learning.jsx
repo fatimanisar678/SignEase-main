@@ -63,7 +63,15 @@ export default function LearningScreen() {
       key={mod.id}
       style={styles.moduleCard}
       activeOpacity={0.8}
-      onPress={() => router.push('/chatbot-tutor')}
+      onPress={() => {
+        if (mod.title.toLowerCase().includes('number')) {
+          router.push('/numbers');
+        } else if (mod.title.toLowerCase().includes('phrase')) {
+          router.push('/phrases');
+        } else {
+          router.push('/chatbot-tutor');
+        }
+      }}
     >
       <View style={styles.moduleHeaderRow}>
         <View style={[styles.moduleIconBox, { backgroundColor: mod.iconColor }]}>

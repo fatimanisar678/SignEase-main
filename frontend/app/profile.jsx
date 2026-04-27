@@ -32,7 +32,7 @@ export default function ProfileScreen() {
       {/* Top Bar */}
       <View style={styles.topBar}>
         <View style={styles.userInfo}>
-          <Image source={{ uri: 'https://i.pravatar.cc/100?img=11' }} style={styles.topAvatar} />
+          <Image source={require('../assets/images/logo.png')} style={styles.topAvatar} />
           <Text style={styles.appName}>SignEase</Text>
         </View>
         <TouchableOpacity style={styles.notificationBtn}>
@@ -43,7 +43,9 @@ export default function ProfileScreen() {
       {/* Profile Header */}
       <View style={styles.profileHeader}>
         <View style={styles.avatarContainer}>
-          <Image source={{ uri: 'https://i.pravatar.cc/300?img=11' }} style={styles.mainAvatar} />
+          <View style={styles.mainAvatar}>
+             <Ionicons name="person" size={60} color="#3B82F6" />
+          </View>
           <TouchableOpacity style={styles.editBadge}>
             <Ionicons name="pencil" size={14} color="#FFFFFF" />
           </TouchableOpacity>
@@ -153,7 +155,7 @@ const styles = StyleSheet.create({
   notificationBtn: { padding: 4 },
   profileHeader: { alignItems: 'center', marginBottom: 30 },
   avatarContainer: { position: 'relative', marginBottom: 16 },
-  mainAvatar: { width: 110, height: 110, borderRadius: 55, backgroundColor: '#E2E8F0', borderWidth: 4, borderColor: '#FFFFFF' },
+  mainAvatar: { width: 110, height: 110, borderRadius: 55, backgroundColor: '#E2E8F0', borderWidth: 4, borderColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center' },
   editBadge: { position: 'absolute', bottom: 0, right: 0, backgroundColor: '#4A628A', width: 32, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center', borderWidth: 3, borderColor: '#F8F9FA' },
   name: { fontSize: 24, fontWeight: '700', color: '#0F172A', marginBottom: 4 },
   userTitle: { fontSize: 15, color: '#475569', marginBottom: 12 },

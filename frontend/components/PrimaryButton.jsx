@@ -1,7 +1,7 @@
 import React from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity } from 'react-native';
 
-export default function PrimaryButton({ label, onPress, variant = 'primary', style, loading }) {
+export default function PrimaryButton({ label, onPress, variant = 'primary', style, loading, disabled }) {
   const isSecondary = variant === 'secondary';
 
   return (
@@ -9,11 +9,12 @@ export default function PrimaryButton({ label, onPress, variant = 'primary', sty
       style={[
         styles.base,
         isSecondary ? styles.secondary : styles.primary,
+        (disabled || loading) && styles.disabled,
         style,
       ]}
       onPress={onPress}
       activeOpacity={0.85}
-      disabled={loading}
+      disabled={loading || disabled}
     >
       {loading ? (
         <ActivityIndicator color={isSecondary ? '#022c22' : '#f9fafb'} />
@@ -38,6 +39,10 @@ const styles = StyleSheet.create({
   },
   secondary: {
     backgroundColor: '#22c55e',
+  },
+  disabled: {
+    backgroundColor: '#94a3b8',
+    opacity: 0.6,
   },
   label: {
     fontSize: 16,

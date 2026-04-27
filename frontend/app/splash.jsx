@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Animated, SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import { Animated, SafeAreaView, StyleSheet, Text, View, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -48,10 +48,11 @@ export default function SplashScreen() {
         <View style={styles.container}>
           <View style={styles.content}>
             <View style={styles.logoCard}>
-              <View style={styles.iconWrapper}>
-                <Ionicons name="hand-right" size={60} color="#374B6D" style={{ transform: [{ rotate: '-15deg' }] }} />
-                <View style={styles.logoDot} />
-              </View>
+              <Image 
+                source={require('../assets/images/logo.png')} 
+                style={styles.logoImage}
+                resizeMode="contain"
+              />
             </View>
             <Text style={styles.title}>SignEase</Text>
             <Text style={styles.subtitle}>Bridging Communication{'\n'}Through Signs</Text>
@@ -81,8 +82,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   content: { alignItems: 'center', width: '100%', marginTop: -50 },
   logoCard: { width: 140, height: 140, backgroundColor: '#FFFFFF', borderRadius: 45, justifyContent: 'center', alignItems: 'center', marginBottom: 40, shadowColor: '#CDB4DB', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.2, shadowRadius: 20, elevation: 8 },
-  iconWrapper: { position: 'relative', justifyContent: 'center', alignItems: 'center' },
-  logoDot: { position: 'absolute', top: -5, right: -10, width: 14, height: 14, borderRadius: 7, backgroundColor: '#D1B3F2' },
+  logoImage: { width: 100, height: 100 },
   title: { fontSize: 42, fontWeight: '800', color: '#374B6D', letterSpacing: -0.5, marginBottom: 10 },
   subtitle: { fontSize: 18, color: '#6B7280', textAlign: 'center', lineHeight: 26, fontWeight: '400' },
   loaderContainer: { marginTop: 60, alignItems: 'center', width: '100%' },

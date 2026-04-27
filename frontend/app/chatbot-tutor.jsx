@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { StyleSheet, Text, View, Image, TouchableOpacity, ScrollView, Switch, SafeAreaView } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import * as Speech from 'expo-speech';
 import ScreenContainer from '@/components/ScreenContainer';
 import CustomButton from '@/components/CustomButton';
 
@@ -10,6 +11,10 @@ const ALPHABET = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
 export default function ChatbotTutorScreen() {
   const [activeLetter, setActiveLetter] = useState('A');
   const [isSlowMode, setIsSlowMode] = useState(false);
+
+  const speak = (text) => {
+    Speech.speak(text, { rate: 0.9 });
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -56,7 +61,7 @@ export default function ChatbotTutorScreen() {
             <Text style={styles.largeLetter}>{activeLetter}</Text>
             <Text style={styles.letterSubtitle}>This is the sign for {activeLetter}</Text>
           </View>
-          <TouchableOpacity style={styles.speakerButton}>
+          <TouchableOpacity style={styles.speakerButton} onPress={() => speak(activeLetter)}>
             <Ionicons name="volume-medium" size={20} color="#374B6D" />
           </TouchableOpacity>
         </View>

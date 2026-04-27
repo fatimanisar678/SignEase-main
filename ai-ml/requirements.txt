@@ -4,4 +4,5 @@ mediapipe==0.10.14
 opencv-python-headless==4.10.0.84
 numpy==2.1.2
 scikit-learn==1.5.2
-
+# Required for Devansh-47 CNN model (cnn8grps_rad1_model.h5)
+tensorflow==2.17.0
