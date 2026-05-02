@@ -7,10 +7,10 @@ import { useAuth } from '@/context/AuthContext';
 
 export default function ProfileScreen() {
   const { user, logout, refreshUser } = useAuth();
-+
-+  useEffect(() => {
-+    refreshUser();
-+  }, []);
+
+  useEffect(() => {
+    refreshUser();
+  }, []);
 
   const handleLogout = async () => {
     await logout();
