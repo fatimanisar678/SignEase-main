@@ -1,23 +1,44 @@
 import React, { useEffect } from 'react';
-import { StyleSheet, Text, View, Image, TouchableOpacity, ScrollView } from 'react-native';
+import {
+  StyleSheet, Text, View, Image,
+  TouchableOpacity, ScrollView, ActivityIndicator,
+} from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import ScreenContainer from '@/components/ScreenContainer';
 import { useAuth } from '@/context/AuthContext';
 
 export default function ProfileScreen() {
-  const { user, logout, refreshUser } = useAuth();
+  const { user, token, logout, refreshUser, isLoading } = useAuth();
 
   useEffect(() => {
-    refreshUser();
-  }, []);
+    // Only refresh if we have a valid token — avoids errors for unauthenticated sessions
+    if (token) {
+      refreshUser();
+    }
+  }, [token]);
 
   const handleLogout = async () => {
     await logout();
     router.replace('/login');
   };
 
-  // Real data from User model: fullName, level, streakDays(Number), lessonsCompleted(Number), quizScore(String)
+  // Guard: if auth is still loading, show spinner
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#4A628A" />
+      </View>
+    );
+  }
+
+  // Guard: if somehow no user, go to login
+  if (!user) {
+    router.replace('/login');
+    return null;
+  }
+
+  // Real data from User model
   const name = user?.fullName || 'Guest User';
   const level = user?.level || 'Beginner';
   const streakDays = user?.streakDays ?? 0;
@@ -48,7 +69,7 @@ export default function ProfileScreen() {
       <View style={styles.profileHeader}>
         <View style={styles.avatarContainer}>
           <View style={styles.mainAvatar}>
-             <Ionicons name="person" size={60} color="#3B82F6" />
+            <Ionicons name="person" size={60} color="#3B82F6" />
           </View>
           <TouchableOpacity style={styles.editBadge}>
             <Ionicons name="pencil" size={14} color="#FFFFFF" />
@@ -90,26 +111,47 @@ export default function ProfileScreen() {
               {dailyProgress} / <Text style={styles.dailyGoalTotal}>{dailyGoal} mins</Text>
             </Text>
             <View style={styles.progressBarBackground}>
-              <View style={[styles.progressBarFill, { width: `${Math.round((dailyProgress / dailyGoal) * 100)}%` }]} />
+              <View
+                style={[
+                  styles.progressBarFill,
+                  { width: `${Math.round((dailyProgress / dailyGoal) * 100)}%` },
+                ]}
+              />
             </View>
           </View>
-          <Ionicons name="flash" size={100} color="rgba(255,255,255,0.1)" style={styles.lightningIcon} />
+          <Ionicons
+            name="flash"
+            size={100}
+            color="rgba(255,255,255,0.1)"
+            style={styles.lightningIcon}
+          />
         </View>
       </View>
 
-      {/* Achievements - unlocked based on real user data */}
+      {/* Achievements */}
       <View style={styles.section}>
         <Text style={styles.sectionHeading}>ACHIEVEMENTS</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.achievementsScroll}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.achievementsScroll}
+        >
           {[
             { icon: 'medal', color: '#EAB308', label: 'First Lesson', unlocked: lessonsCompleted >= 1 },
             { icon: 'flame', color: '#F97316', label: '7-Day Streak', unlocked: streakDays >= 7 },
             { icon: 'star', color: '#3B82F6', label: 'Perfect Quiz', unlocked: quizScore === '100%' },
             { icon: 'trophy', color: '#F59E0B', label: '10 Lessons', unlocked: lessonsCompleted >= 10 },
           ].map((ach) => (
-            <View key={ach.label} style={[styles.achievementCard, !ach.unlocked && styles.achievementLocked]}>
+            <View
+              key={ach.label}
+              style={[styles.achievementCard, !ach.unlocked && styles.achievementLocked]}
+            >
               <View style={styles.achievementIconCircle}>
-                <Ionicons name={ach.icon} size={24} color={ach.unlocked ? ach.color : '#94A3B8'} />
+                <Ionicons
+                  name={ach.icon}
+                  size={24}
+                  color={ach.unlocked ? ach.color : '#94A3B8'}
+                />
               </View>
               <Text style={styles.achievementText}>{ach.label}</Text>
             </View>
@@ -149,6 +191,7 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8F9FA' },
   safeAreaOverride: { backgroundColor: '#F8F9FA' },
   container: { paddingHorizontal: 20, paddingTop: 10 },
   scroll: { paddingBottom: 40 },
@@ -159,8 +202,17 @@ const styles = StyleSheet.create({
   notificationBtn: { padding: 4 },
   profileHeader: { alignItems: 'center', marginBottom: 30 },
   avatarContainer: { position: 'relative', marginBottom: 16 },
-  mainAvatar: { width: 110, height: 110, borderRadius: 55, backgroundColor: '#E2E8F0', borderWidth: 4, borderColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center' },
-  editBadge: { position: 'absolute', bottom: 0, right: 0, backgroundColor: '#4A628A', width: 32, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center', borderWidth: 3, borderColor: '#F8F9FA' },
+  mainAvatar: {
+    width: 110, height: 110, borderRadius: 55,
+    backgroundColor: '#E2E8F0', borderWidth: 4, borderColor: '#FFFFFF',
+    justifyContent: 'center', alignItems: 'center',
+  },
+  editBadge: {
+    position: 'absolute', bottom: 0, right: 0,
+    backgroundColor: '#4A628A', width: 32, height: 32, borderRadius: 16,
+    justifyContent: 'center', alignItems: 'center',
+    borderWidth: 3, borderColor: '#F8F9FA',
+  },
   name: { fontSize: 24, fontWeight: '700', color: '#0F172A', marginBottom: 4 },
   userTitle: { fontSize: 15, color: '#475569', marginBottom: 12 },
   tagsRow: { flexDirection: 'row', gap: 10 },
@@ -171,11 +223,20 @@ const styles = StyleSheet.create({
   section: { marginBottom: 30 },
   sectionHeading: { fontSize: 13, fontWeight: '700', color: '#64748B', letterSpacing: 1, marginBottom: 15 },
   progressRow: { flexDirection: 'row', gap: 15, marginBottom: 15 },
-  progressCard: { flex: 1, backgroundColor: '#FFFFFF', borderRadius: 20, padding: 18, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2 },
+  progressCard: {
+    flex: 1, backgroundColor: '#FFFFFF', borderRadius: 20, padding: 18,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03, shadowRadius: 8, elevation: 2,
+  },
   progressIcon: { marginBottom: 12 },
   progressValue: { fontSize: 28, fontWeight: '700', color: '#2A4B6B', marginBottom: 4 },
   progressLabel: { fontSize: 12, color: '#64748B' },
-  dailyGoalCard: { backgroundColor: '#4A628A', borderRadius: 20, padding: 20, flexDirection: 'row', alignItems: 'center', overflow: 'hidden', shadowColor: '#4A628A', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 4 },
+  dailyGoalCard: {
+    backgroundColor: '#4A628A', borderRadius: 20, padding: 20,
+    flexDirection: 'row', alignItems: 'center', overflow: 'hidden',
+    shadowColor: '#4A628A', shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3, shadowRadius: 10, elevation: 4,
+  },
   dailyGoalContent: { flex: 1, zIndex: 2 },
   dailyGoalLabel: { color: '#E2E8F0', fontSize: 13, fontWeight: '500', marginBottom: 6 },
   dailyGoalValue: { fontSize: 28, fontWeight: '700', color: '#FFFFFF', marginBottom: 12 },
@@ -184,13 +245,27 @@ const styles = StyleSheet.create({
   progressBarFill: { height: '100%', backgroundColor: '#FFFFFF', borderRadius: 4 },
   lightningIcon: { position: 'absolute', right: -10, bottom: -20, zIndex: 1 },
   achievementsScroll: { gap: 12, paddingRight: 20 },
-  achievementCard: { backgroundColor: '#F1F5F9', borderRadius: 16, width: 90, paddingVertical: 16, paddingHorizontal: 8, alignItems: 'center' },
+  achievementCard: {
+    backgroundColor: '#F1F5F9', borderRadius: 16, width: 90,
+    paddingVertical: 16, paddingHorizontal: 8, alignItems: 'center',
+  },
   achievementLocked: { opacity: 0.4 },
-  achievementIconCircle: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
+  achievementIconCircle: {
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: '#FFFFFF', justifyContent: 'center',
+    alignItems: 'center', marginBottom: 8,
+  },
   achievementText: { fontSize: 11, fontWeight: '600', color: '#475569', textAlign: 'center' },
-  menuContainer: { backgroundColor: '#FFFFFF', borderRadius: 24, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.03, shadowRadius: 10, elevation: 2 },
+  menuContainer: {
+    backgroundColor: '#FFFFFF', borderRadius: 24, overflow: 'hidden',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.03, shadowRadius: 10, elevation: 2,
+  },
   menuItem: { flexDirection: 'row', alignItems: 'center', padding: 16 },
-  menuIconContainer: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 16 },
+  menuIconContainer: {
+    width: 40, height: 40, borderRadius: 12,
+    justifyContent: 'center', alignItems: 'center', marginRight: 16,
+  },
   menuText: { flex: 1, fontSize: 16, fontWeight: '600', color: '#0F172A' },
   divider: { height: 1, backgroundColor: '#F1F5F9', marginLeft: 72 },
 });

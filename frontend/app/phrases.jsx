@@ -1,42 +1,84 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, Image, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React from 'react';
+import {
+  StyleSheet, Text, View, Image, FlatList,
+  TouchableOpacity,
+} from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Speech from 'expo-speech';
 import ScreenContainer from '@/components/ScreenContainer';
-import { apiRequest } from '@/lib/api';
+
+// 100% local images — no API, no network needed
+const PHRASES = [
+  {
+    id: 'p1',
+    character: 'Hello',
+    description: 'Wave your open hand near your forehead outward.',
+    image: require('../assets/signs/phrase_hello.jpeg'),
+  },
+  {
+    id: 'p2',
+    character: 'Thank You',
+    description: 'Touch your chin with fingertips then move hand forward and down.',
+    image: require('../assets/signs/phrase_thankyou.jpeg'),
+  },
+  {
+    id: 'p3',
+    character: 'Please',
+    description: 'Rub your flat hand in a circular motion on your chest.',
+    image: require('../assets/signs/phrase_please.jpeg'),
+  },
+  {
+    id: 'p4',
+    character: 'Sorry',
+    description: 'Make a fist and rub it in a circle over your chest.',
+    image: require('../assets/signs/phrase_sorry.jpeg'),
+  },
+  {
+    id: 'p5',
+    character: 'Yes',
+    description: 'Make an "S" fist and nod it up and down like a head nodding.',
+    image: require('../assets/signs/phrase_yes.jpeg'),
+  },
+  {
+    id: 'p6',
+    character: 'No',
+    description: 'Extend index and middle finger, then snap them to your thumb.',
+    image: require('../assets/signs/phrase_no.jpeg'),
+  },
+  {
+    id: 'p7',
+    character: 'Goodbye',
+    description: 'Open your hand and bend your fingers up and down like waving.',
+    image: require('../assets/signs/phrase_goodbye.jpeg'),
+  },
+  {
+    id: 'p8',
+    character: 'I Love You',
+    description: 'Extend your thumb, index finger, and pinky simultaneously.',
+    image: require('../assets/signs/phrase_loveyou.jpeg'),
+  },
+  {
+    id: 'p9',
+    character: 'You Are Welcome',
+    description: 'Bring your flat hand from your chin forward and downward.',
+    image: require('../assets/signs/phrase_welcome.jpeg'),
+  },
+  {
+    id: 'p10',
+    character: 'Family',
+    description: 'Form two "F" hands in a circle to indicate family group.',
+    image: require('../assets/signs/phrase_family.jpeg'),
+  },
+];
 
 export default function PhrasesLearningScreen() {
-  const [phrases, setPhrases] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Fetch phrases from backend
-    apiRequest('/api/lessons')
-      .then((data) => {
-        if (Array.isArray(data)) {
-          // Filter for phrases (where character length > 1 usually or by moduleId)
-          // For simplicity, we'll just take those that are not single alphabet letters
-          const filtered = data.filter(l => l.character.length > 1);
-          setPhrases(filtered);
-        }
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, []);
-
-  const speak = (text) => {
-    Speech.speak(text, { rate: 0.9 });
-  };
+  const speak = (text) => Speech.speak(text, { rate: 0.9 });
 
   const renderItem = ({ item }) => (
     <View style={styles.card}>
-      <View style={styles.gifContainer}>
-        <Image 
-          source={{ uri: item.mediaUrl }} 
-          style={styles.gif} 
-          resizeMode="contain"
-        />
+      <View style={styles.imageContainer}>
+        <Image source={item.image} style={styles.signImage} resizeMode="contain" />
       </View>
       <View style={styles.cardContent}>
         <View style={styles.textRow}>
@@ -51,31 +93,31 @@ export default function PhrasesLearningScreen() {
   );
 
   return (
-    <ScreenContainer scrollable containerStyle={styles.safeArea} style={styles.container}>
+    <ScreenContainer
+      scrollable
+      containerStyle={styles.safeArea}
+      style={styles.container}
+    >
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color="#374B6D" />
         </TouchableOpacity>
         <Text style={styles.title}>Common Phrases</Text>
       </View>
-      
+
       <Text style={styles.subtitle}>
-        Learn essential everyday expressions in ASL. Tap the volume icon to hear the pronunciation.
+        Learn essential everyday expressions in ASL. Tap the volume icon to hear pronunciation.
       </Text>
 
-      {loading ? (
-        <ActivityIndicator size="large" color="#4A628A" style={{ marginTop: 40 }} />
-      ) : (
-        <FlatList
-          data={phrases}
-          renderItem={renderItem}
-          keyExtractor={(item) => item._id}
-          scrollEnabled={false}
-          contentContainerStyle={styles.list}
-        />
-      )}
+      <FlatList
+        data={PHRASES}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id}
+        scrollEnabled={false}
+        contentContainerStyle={styles.list}
+      />
 
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.practiceBtn}
         onPress={() => router.push('/practice')}
       >
@@ -89,11 +131,11 @@ export default function PhrasesLearningScreen() {
 const styles = StyleSheet.create({
   safeArea: { backgroundColor: '#F8F9FA' },
   container: { paddingHorizontal: 16, paddingTop: 10 },
-  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 15 },
-  backBtn: { marginRight: 15 },
-  title: { fontSize: 28, fontWeight: '800', color: '#374B6D' },
-  subtitle: { fontSize: 15, color: '#64748B', lineHeight: 22, marginBottom: 25 },
-  list: { paddingBottom: 30 },
+  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  backBtn: { marginRight: 14, padding: 4 },
+  title: { fontSize: 26, fontWeight: '800', color: '#374B6D' },
+  subtitle: { fontSize: 14, color: '#64748B', lineHeight: 20, marginBottom: 22 },
+  list: { paddingBottom: 20 },
   card: {
     backgroundColor: '#FFFFFF',
     borderRadius: 24,
@@ -105,18 +147,25 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 3,
   },
-  gifContainer: {
+  imageContainer: {
     width: '100%',
-    height: 180,
-    backgroundColor: '#F1F5F9',
-    justifyContent: 'center',
-    alignItems: 'center',
+    height: 220,
+    backgroundColor: '#F8FAFC',
   },
-  gif: { width: '100%', height: '100%' },
+  signImage: { width: '100%', height: '100%' },
   cardContent: { padding: 20 },
-  textRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  textRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
   phraseTitle: { fontSize: 20, fontWeight: '700', color: '#1E293B' },
-  speakerBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#F0F4F8', justifyContent: 'center', alignItems: 'center' },
+  speakerBtn: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: '#F0F4F8',
+    justifyContent: 'center', alignItems: 'center',
+  },
   phraseDesc: { fontSize: 14, color: '#64748B', lineHeight: 20 },
   practiceBtn: {
     backgroundColor: '#4A628A',
@@ -125,6 +174,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 18,
     borderRadius: 16,
+    marginTop: 8,
     marginBottom: 40,
   },
   practiceBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
