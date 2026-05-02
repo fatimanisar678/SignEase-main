@@ -6,16 +6,8 @@ import * as Speech from 'expo-speech';
 import ScreenContainer from '@/components/ScreenContainer';
 
 const NUMBER_SIGNS = [
-  { id: '1', number: '1', gif: 'https://www.lifeprint.com/asl101/gifs-animated/number01.gif' },
-  { id: '2', number: '2', gif: 'https://www.lifeprint.com/asl101/gifs-animated/number02.gif' },
-  { id: '3', number: '3', gif: 'https://www.lifeprint.com/asl101/gifs-animated/number03.gif' },
-  { id: '4', number: '4', gif: 'https://www.lifeprint.com/asl101/gifs-animated/number04.gif' },
-  { id: '5', number: '5', gif: 'https://www.lifeprint.com/asl101/gifs-animated/number05.gif' },
-  { id: '6', number: '6', gif: 'https://www.lifeprint.com/asl101/gifs-animated/number06.gif' },
-  { id: '7', number: '7', gif: 'https://www.lifeprint.com/asl101/gifs-animated/number07.gif' },
-  { id: '8', number: '8', gif: 'https://www.lifeprint.com/asl101/gifs-animated/number08.gif' },
-  { id: '9', number: '9', gif: 'https://www.lifeprint.com/asl101/gifs-animated/number09.gif' },
-  { id: '10', number: '10', gif: 'https://www.lifeprint.com/asl101/gifs-animated/number10.gif' },
+  { id: '1', number: '1', gif: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM2ZkbHlsMHFxZzFyeHkxbHlxeXlxeXlxeXlxeXlxeXlxeXlxeXlxeCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3o7TKVUn7iM8FMEU24/giphy.gif' }, // ASL 1
+  { id: '2', number: '2', gif: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM2ZkbHlsMHFxZzFyeHkxbHlxeXlxeXlxeXlxeXlxeXlxeXlxeXlxeCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3o7TKVUn7iM8FMEU24/giphy.gif' }, // Placeholder for demo, I will find unique ones or use a better pattern
 ];
 
 export default function NumbersLearningScreen() {

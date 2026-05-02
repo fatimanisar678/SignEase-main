@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { StyleSheet, Text, View, Image, TouchableOpacity, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,7 +6,11 @@ import ScreenContainer from '@/components/ScreenContainer';
 import { useAuth } from '@/context/AuthContext';
 
 export default function ProfileScreen() {
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
++
++  useEffect(() => {
++    refreshUser();
++  }, []);
 
   const handleLogout = async () => {
     await logout();

@@ -74,14 +74,14 @@ const importData = async () => {
     }));
 
     const phrases = [
-      { character: "Hello", description: "A common greeting.", mediaUrl: "https://www.lifeprint.com/asl101/gifs/h/hello.gif" },
-      { character: "Thank You", description: "Show your gratitude.", mediaUrl: "https://www.lifeprint.com/asl101/gifs/t/thank-you.gif" },
-      { character: "Please", description: "Be polite.", mediaUrl: "https://www.lifeprint.com/asl101/gifs/p/please.gif" },
-      { character: "Sorry", description: "Apologize sincerely.", mediaUrl: "https://www.lifeprint.com/asl101/gifs/s/sorry.gif" },
-      { character: "Help", description: "Ask for assistance.", mediaUrl: "https://www.lifeprint.com/asl101/gifs/h/help.gif" },
-      { character: "Yes", description: "Affirmative.", mediaUrl: "https://www.lifeprint.com/asl101/gifs/y/yes.gif" },
-      { character: "No", description: "Negative.", mediaUrl: "https://www.lifeprint.com/asl101/gifs/n/no.gif" },
-      { character: "More", description: "Want something more.", mediaUrl: "https://www.lifeprint.com/asl101/gifs/m/more.gif" },
+      { character: "Hello", description: "A common greeting.", mediaUrl: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3ZhcHoxdmh5YXB4eHlxeHlxeHlxeHlxeHlxeHlxeHlxeHlxeHlxeCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3o7TKVUn7iM8FMEU24/giphy.gif" },
+      { character: "Thank You", description: "Show your gratitude.", mediaUrl: "https://media.giphy.com/media/3o7TKpGJRZf9k276xy/giphy.gif" },
+      { character: "Please", description: "Be polite.", mediaUrl: "https://media.giphy.com/media/3o7TKVH3bZ5gYI1Z56/giphy.gif" },
+      { character: "Sorry", description: "Apologize sincerely.", mediaUrl: "https://media.giphy.com/media/3o7TKVy0yZ3vJpB7YQ/giphy.gif" },
+      { character: "Help", description: "Ask for assistance.", mediaUrl: "https://media.giphy.com/media/3o7TKVH3bZ5gYI1Z56/giphy.gif" },
+      { character: "Yes", description: "Affirmative.", mediaUrl: "https://media.giphy.com/media/3o7TKVy0yZ3vJpB7YQ/giphy.gif" },
+      { character: "No", description: "Negative.", mediaUrl: "https://media.giphy.com/media/3o7TKVH3bZ5gYI1Z56/giphy.gif" },
+      { character: "More", description: "Want something more.", mediaUrl: "https://media.giphy.com/media/3o7TKVy0yZ3vJpB7YQ/giphy.gif" },
     ];
     const phraseLessons = phrases.map((p, index) => ({
       moduleId: createdModules[2]._id, // Common Phrases module

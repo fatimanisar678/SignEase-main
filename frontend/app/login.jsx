@@ -116,18 +116,6 @@ export default function LoginScreen() {
                 style={styles.primaryBtn}
               />
 
-              <View style={styles.dividerRow}>
-                <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>OR</Text>
-                <View style={styles.dividerLine} />
-              </View>
-
-              <CustomButton
-                label="Continue with Google"
-                onPress={() => { }}
-                variant="outline"
-                style={styles.googleBtn}
-              />
             </View>
           </View>
 

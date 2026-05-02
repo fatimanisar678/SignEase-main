@@ -11,6 +11,25 @@ const ALPHABET = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
 export default function ChatbotTutorScreen() {
   const [activeLetter, setActiveLetter] = useState('A');
   const [isSlowMode, setIsSlowMode] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState('en-US');
+
+  const languages = [
+    { label: 'English', code: 'en-US' },
+    { label: 'Urdu (اردو)', code: 'ur-PK' },
+    { label: 'Sindhi (سنڌي)', code: 'sd-PK' },
+    { label: 'Punjabi (پنجابي)', code: 'pa-PK' },
+  ];
+
+  const speakExplanation = (letter, langCode) => {
+    const explanations = {
+      'en-US': `This is the sign for ${letter}`,
+      'ur-PK': `یہ ${letter} کے لیے اشارہ ہے`,
+      'sd-PK': `هي ${letter} لاءِ اشارو آهي`,
+      'pa-PK': `ਇਹ ${letter} ਦਾ ਇਸ਼ਾਰਾ ਹੈ`,
+    };
+    const text = explanations[langCode] || explanations['en-US'];
+    Speech.speak(text, { language: langCode, rate: 0.8 });
+  };
 
   const speak = (text) => {
     Speech.speak(text, { rate: 0.9 });
@@ -55,13 +74,33 @@ export default function ChatbotTutorScreen() {
           />
         </View>
 
+        {/* Language Selection */}
+        <View style={styles.languageContainer}>
+          {languages.map((lang) => (
+            <TouchableOpacity 
+              key={lang.code}
+              style={[styles.langChip, selectedLanguage === lang.code && styles.langChipActive]}
+              onPress={() => setSelectedLanguage(lang.code)}
+            >
+              <Text style={[styles.langChipText, selectedLanguage === lang.code && styles.langChipTextActive]}>
+                {lang.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
         {/* Letter Info Card */}
         <View style={styles.letterCard}>
           <View>
             <Text style={styles.largeLetter}>{activeLetter}</Text>
-            <Text style={styles.letterSubtitle}>This is the sign for {activeLetter}</Text>
+            <Text style={styles.letterSubtitle}>
+              {selectedLanguage === 'ur-PK' ? `یہ ${activeLetter} ہے` : 
+               selectedLanguage === 'sd-PK' ? `هي ${activeLetter} آهي` : 
+               selectedLanguage === 'pa-PK' ? `ਇਹ ${activeLetter} ਹੈ` : 
+               `This is the sign for ${activeLetter}`}
+            </Text>
           </View>
-          <TouchableOpacity style={styles.speakerButton} onPress={() => speak(activeLetter)}>
+          <TouchableOpacity style={styles.speakerButton} onPress={() => speakExplanation(activeLetter, selectedLanguage)}>
             <Ionicons name="volume-medium" size={20} color="#374B6D" />
           </TouchableOpacity>
         </View>
@@ -157,6 +196,11 @@ const styles = StyleSheet.create({
   scroll: {
     paddingBottom: 40,
   },
+  languageContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 15, justifyContent: 'center' },
+  langChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, backgroundColor: '#E2E8F0', borderWidth: 1, borderColor: 'transparent' },
+  langChipActive: { backgroundColor: '#4A628A', borderColor: '#3B82F6' },
+  langChipText: { fontSize: 11, color: '#475569', fontWeight: '600' },
+  langChipTextActive: { color: '#FFFFFF' },
   infoHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',

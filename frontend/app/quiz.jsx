@@ -12,7 +12,7 @@ import { useAuth } from '@/context/AuthContext';
 // 10 solid ASL quiz questions with working GIF URLs
 const MOCK_QUESTIONS = [
   // WORDS
-  { id: 'q1', prompt: 'What word does this sign mean?', mediaUrl: 'https://www.lifeprint.com/asl101/gifs/h/hello.gif', options: ['Goodbye', 'Please', 'Hello', 'Sorry'], correctIndex: 2 },
+  { id: 'q1', prompt: 'What word does this sign mean?', mediaUrl: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3ZhcHoxdmh5YXB4eHlxeHlxeHlxeHlxeHlxeHlxeHlxeHlxeHlxeCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3o7TKVUn7iM8FMEU24/giphy.gif', options: ['Goodbye', 'Please', 'Hello', 'Sorry'], correctIndex: 2 },
   { id: 'q2', prompt: 'Identify this common sign.', mediaUrl: 'https://www.lifeprint.com/asl101/gifs/t/thank-you.gif', options: ['Thank You', 'Welcome', 'Excuse Me', 'No'], correctIndex: 0 },
   
   // ALPHABET
