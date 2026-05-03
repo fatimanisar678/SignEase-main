@@ -5,24 +5,30 @@ import { Ionicons } from '@expo/vector-icons';
 import ScreenContainer from '@/components/ScreenContainer';
 import PrimaryButton from '@/components/PrimaryButton';
 import CameraViewLive from '@/components/CameraView';
-import { apiRequest } from '@/lib/api';
+import { apiRequest, ML_BASE_URL } from '@/lib/api';
 
 export default function SignTranslatorScreen() {
   const [detectedText, setDetectedText] = useState('');
   const [isTranslating, setIsTranslating] = useState(false);
   const [statusText, setStatusText] = useState('Idle');
   const [builtSentence, setBuiltSentence] = useState('');
-  const [selectedLanguage, setSelectedLanguage] = useState('en-US'); // Default: English
+  const [selectedLanguage, setSelectedLanguage] = useState('en-US');
   const [translatedSentence, setTranslatedSentence] = useState('');
   const [isSpeaking, setIsSpeaking] = useState(false);
-  
+  const [lastConfidence, setLastConfidence] = useState(null);
+
   const lastPredictionRef = useRef(null);
   const lastCallAtRef = useRef(0);
   const consecutiveRef = useRef(0);
+  // FIX: track when the last letter was added so we don't repeat too fast
+  const lastAddedAtRef = useRef(0);
 
   const handleDetectToggle = () => {
     setIsTranslating((v) => !v);
     setStatusText((t) => (t === 'Idle' ? 'Starting…' : 'Idle'));
+    // Reset detection state when stopping
+    lastPredictionRef.current = null;
+    consecutiveRef.current = 0;
   };
 
   const languages = [
@@ -34,29 +40,24 @@ export default function SignTranslatorScreen() {
 
   const translateText = async (text, targetLang) => {
     if (!text || targetLang === 'en-US') return text;
-    
-    // For demo/priority, we use a simple mapping or would call a translation API here
-    // In a real app, you'd call: await apiRequest('/api/translate', { method: 'POST', body: { text, targetLang } })
+
     setStatusText('Translating…');
-    
-    // Mock translation logic for common signs
+
     const dictionary = {
       'HELLO': { 'ur-PK': 'سلام', 'sd-PK': 'سلام', 'pa-PK': 'ست سری اکال' },
       'A': { 'ur-PK': 'الف', 'sd-PK': 'الف', 'pa-PK': 'ੳ' },
-      // ... more mappings
     };
-    
-    // Return original if not in dictionary for now, as a placeholder
+
     return dictionary[text.toUpperCase()]?.[targetLang] || text;
   };
 
   const handleTranslateAndSpeak = async () => {
     if (!builtSentence) return;
-    
+
     setIsSpeaking(true);
     const translation = await translateText(builtSentence, selectedLanguage);
     setTranslatedSentence(translation);
-    
+
     Speech.speak(translation, {
       language: selectedLanguage,
       onDone: () => setIsSpeaking(false),
@@ -66,47 +67,81 @@ export default function SignTranslatorScreen() {
 
   const handleFrame = useCallback(async (base64) => {
     const now = Date.now();
-    if (now - lastCallAtRef.current < 900) return;
+    // FIX: debounce raised from 900ms → 600ms to match the slower camera interval.
+    // The camera now fires every 1500ms, so 600ms debounce here is fine.
+    if (now - lastCallAtRef.current < 600) return;
     lastCallAtRef.current = now;
 
     try {
       setStatusText('Detecting…');
-      const data = await apiRequest('/api/predict-sign', {
+
+      // FIX: Call ML server directly on port 8000 instead of routing through
+      // Node backend on port 5000. This removes one failure point.
+      const response = await fetch(`${ML_BASE_URL}/predict-sign`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ imageBase64: base64 }),
       });
 
+      if (!response.ok) throw new Error(`Server ${response.status}`);
+      const data = await response.json();
+
       const prediction = data?.prediction ?? null;
+      const confidence = data?.confidence ?? 0;
+
       if (!prediction) {
-        setStatusText('No hand');
+        // FIX: show why — no hand, or low confidence
+        const msg = data?.message || 'No hand';
+        setStatusText(msg.includes('confidence') ? 'Low confidence' : 'No hand');
         consecutiveRef.current = 0;
         return;
       }
 
-      setStatusText('Live');
-      
-      // Basic word building logic: if the same prediction persists for 2 frames, add it
+      // FIX: show confidence in status so you can debug during demo
+      setStatusText(`Live · ${Math.round(confidence * 100)}%`);
+      setLastConfidence(Math.round(confidence * 100));
+
+      // FIX: Sentence building — improved stability.
+      // Old: needed 2 consecutive same frames → added letter (too easy to trigger or miss)
+      // New: needs 3 consecutive same frames, AND at least 1500ms since last letter added.
+      // This means:
+      //   - Short accidental frames (1-2 matches) are ignored
+      //   - The same letter won't repeat-spam if you hold the sign too long
+      //   - You get ~1 letter every 1.5 seconds minimum, which feels natural
+
       if (prediction === lastPredictionRef.current) {
         consecutiveRef.current += 1;
-        if (consecutiveRef.current === 2) {
-          const char = prediction === ' ' ? ' ' : prediction;
-          setBuiltSentence((prev) => prev + char);
-          setDetectedText(prediction);
-          // Optional: Speak character
-          // Speech.speak(char);
+
+        if (consecutiveRef.current === 3) {
+          const timeSinceLastAdd = now - lastAddedAtRef.current;
+
+          // FIX: cooldown — don't add the same letter again within 1500ms
+          if (timeSinceLastAdd > 1500) {
+            const char = prediction === ' ' ? ' ' : prediction;
+            setBuiltSentence((prev) => prev + char);
+            setDetectedText(prediction);
+            lastAddedAtRef.current = now;
+
+            // Speak each letter as it's added (optional — uncomment for demo)
+            // Speech.speak(char, { language: 'en-US', rate: 1.2 });
+          }
         }
       } else {
+        // Different prediction — reset consecutive count
         lastPredictionRef.current = prediction;
         consecutiveRef.current = 0;
       }
     } catch (e) {
       setStatusText('API Error');
+      console.error('Sign detection error:', e.message);
     }
   }, []);
 
   const clearSentence = () => {
     setBuiltSentence('');
     setDetectedText('');
+    setTranslatedSentence('');
+    setLastConfidence(null);
   };
 
   const backspace = () => {
@@ -121,14 +156,14 @@ export default function SignTranslatorScreen() {
           <Text style={styles.statusBadgeText}>{statusText}</Text>
         </View>
       </View>
-      
+
       <Text style={styles.subtitle}>
         Translate signs into words and build sentences in real time.
       </Text>
 
       <View style={styles.languageContainer}>
         {languages.map((lang) => (
-          <TouchableOpacity 
+          <TouchableOpacity
             key={lang.code}
             style={[styles.langChip, selectedLanguage === lang.code && styles.langChipActive]}
             onPress={() => setSelectedLanguage(lang.code)}
@@ -142,18 +177,35 @@ export default function SignTranslatorScreen() {
 
       <CameraViewLive style={styles.camera} isActive={isTranslating} onFrame={handleFrame} />
 
+      {/* FIX: show confidence bar during active detection */}
+      {isTranslating && lastConfidence !== null && (
+        <View style={styles.confidenceRow}>
+          <Text style={styles.confidenceLabel}>Confidence</Text>
+          <View style={styles.confidenceBarBg}>
+            <View style={[
+              styles.confidenceBarFill,
+              {
+                width: `${lastConfidence}%`,
+                backgroundColor: lastConfidence >= 55 ? '#22c55e' : '#f59e0b',
+              }
+            ]} />
+          </View>
+          <Text style={styles.confidenceValue}>{lastConfidence}%</Text>
+        </View>
+      )}
+
       <View style={styles.actionRow}>
         <PrimaryButton
           label={isTranslating ? 'Stop Detection' : 'Start Detection'}
           onPress={handleDetectToggle}
           style={styles.mainButton}
         />
-        <TouchableOpacity 
-          style={[styles.speakerBtn, isSpeaking && styles.speakerBtnActive]} 
+        <TouchableOpacity
+          style={[styles.speakerBtn, isSpeaking && styles.speakerBtnActive]}
           onPress={handleTranslateAndSpeak}
           disabled={!builtSentence}
         >
-          <Ionicons name={isSpeaking ? "radio-button-on" : "volume-high"} size={24} color="#FFFFFF" />
+          <Ionicons name={isSpeaking ? 'radio-button-on' : 'volume-high'} size={24} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
 
@@ -199,6 +251,12 @@ const styles = StyleSheet.create({
   langChipActive: { backgroundColor: '#4A628A', borderColor: '#3B82F6' },
   langChipText: { fontSize: 12, color: '#475569', fontWeight: '600' },
   langChipTextActive: { color: '#FFFFFF' },
+  // FIX: confidence bar styles
+  confidenceRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10, paddingHorizontal: 4 },
+  confidenceLabel: { fontSize: 12, color: '#64748B', width: 74 },
+  confidenceBarBg: { flex: 1, height: 6, backgroundColor: '#E2E8F0', borderRadius: 3, overflow: 'hidden' },
+  confidenceBarFill: { height: '100%', borderRadius: 3 },
+  confidenceValue: { fontSize: 12, color: '#475569', width: 36, textAlign: 'right' },
   actionRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 20 },
   mainButton: { flex: 1, backgroundColor: '#4A628A' },
   speakerBtn: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#8BA3C0', justifyContent: 'center', alignItems: 'center' },
@@ -215,4 +273,3 @@ const styles = StyleSheet.create({
   detectedBadge: { position: 'absolute', bottom: -10, right: 20, backgroundColor: '#4A628A', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 10 },
   detectedBadgeText: { color: '#FFFFFF', fontSize: 11, fontWeight: '700' },
 });
-

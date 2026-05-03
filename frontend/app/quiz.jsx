@@ -11,11 +11,7 @@ import { useAuth } from '@/context/AuthContext';
 
 // 10 solid ASL quiz questions with working GIF URLs
 const MOCK_QUESTIONS = [
-  // WORDS
-  { id: 'q1', prompt: 'What word does this sign mean?', mediaUrl: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3ZhcHoxdmh5YXB4eHlxeHlxeHlxeHlxeHlxeHlxeHlxeHlxeHlxeCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3o7TKVUn7iM8FMEU24/giphy.gif', options: ['Goodbye', 'Please', 'Hello', 'Sorry'], correctIndex: 2 },
-  { id: 'q2', prompt: 'Identify this common sign.', mediaUrl: 'https://www.lifeprint.com/asl101/gifs/t/thank-you.gif', options: ['Thank You', 'Welcome', 'Excuse Me', 'No'], correctIndex: 0 },
-  
-  // ALPHABET
+  // ALPHABET (First)
   { id: 'q3', prompt: 'Which letter is being signed here?', mediaUrl: 'https://www.lifeprint.com/asl101/fingerspelling/abc-gifs/a.gif', options: ['A', 'B', 'S', 'O'], correctIndex: 0 },
   { id: 'q4', prompt: 'Identify this letter:', mediaUrl: 'https://www.lifeprint.com/asl101/fingerspelling/abc-gifs/b.gif', options: ['D', 'F', 'B', 'K'], correctIndex: 2 },
   { id: 'q5', prompt: 'What alphabet is this?', mediaUrl: 'https://www.lifeprint.com/asl101/fingerspelling/abc-gifs/c.gif', options: ['G', 'C', 'O', 'Q'], correctIndex: 1 },
@@ -25,6 +21,10 @@ const MOCK_QUESTIONS = [
   { id: 'q7', prompt: 'Identify this number:', mediaUrl: 'https://www.lifeprint.com/asl101/gifs-animated/number02.gif', options: ['5', '2', '8', '0'], correctIndex: 1 },
   { id: 'q8', prompt: 'What number does this represent?', mediaUrl: 'https://www.lifeprint.com/asl101/gifs-animated/number03.gif', options: ['6', '9', '3', '1'], correctIndex: 2 },
   { id: 'q9', prompt: 'Which number is this?', mediaUrl: 'https://www.lifeprint.com/asl101/gifs-animated/number05.gif', options: ['10', '5', '4', '7'], correctIndex: 1 },
+
+  // WORDS (Last)
+  { id: 'q1', prompt: 'What word does this sign mean?', mediaUrl: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3ZhcHoxdmh5YXB4eHlxeHlxeHlxeHlxeHlxeHlxeHlxeHlxeHlxeCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3o7TKVUn7iM8FMEU24/giphy.gif', options: ['Goodbye', 'Please', 'Hello', 'Sorry'], correctIndex: 2 },
+  { id: 'q2', prompt: 'Identify this common sign.', mediaUrl: 'https://www.lifeprint.com/asl101/gifs/t/thank-you.gif', options: ['Thank You', 'Welcome', 'Excuse Me', 'No'], correctIndex: 0 },
   { id: 'q10', prompt: 'Identify the word being signed:', mediaUrl: 'https://www.lifeprint.com/asl101/gifs/y/yes.gif', options: ['No', 'Yes', 'Maybe', 'Always'], correctIndex: 1 },
 ];
 
@@ -47,22 +47,37 @@ export default function QuizScreen() {
     // Try to get questions from backend, fallback to mock
     apiRequest('/api/quiz/generate')
       .then((data) => {
+        let mapped = [];
         if (Array.isArray(data) && data.length > 0) {
-          // Backend questions need to map to frontend shape
-          const mapped = data.map((q, i) => ({
+          mapped = data.map((q, i) => ({
             id: q._id || `q${i}`,
             prompt: q.prompt || q.question || 'What does this sign mean?',
             mediaUrl: q.mediaUrl || q.gifUrl || MOCK_QUESTIONS[i % MOCK_QUESTIONS.length].mediaUrl,
             options: q.options || MOCK_QUESTIONS[i % MOCK_QUESTIONS.length].options,
             correctIndex: q.correctIndex ?? q.answerIndex ?? 0,
           }));
-          setQuestions(mapped);
         } else {
-          setQuestions(MOCK_QUESTIONS);
+          mapped = [...MOCK_QUESTIONS];
         }
+
+        // Sort questions to put alphabets first, then numbers, then words
+        mapped.sort((a, b) => {
+          const isA_Alphabet = a.options.some(opt => /^[A-Za-z]$/.test(opt));
+          const isB_Alphabet = b.options.some(opt => /^[A-Za-z]$/.test(opt));
+          const isA_Number = a.options.some(opt => /^[0-9]+$/.test(opt));
+          const isB_Number = b.options.some(opt => /^[0-9]+$/.test(opt));
+
+          if (isA_Alphabet && !isB_Alphabet) return -1;
+          if (!isA_Alphabet && isB_Alphabet) return 1;
+          if (isA_Number && !isB_Number) return -1;
+          if (!isA_Number && isB_Number) return 1;
+          return 0;
+        });
+
+        setQuestions(mapped);
       })
       .catch(() => {
-        setQuestions(MOCK_QUESTIONS);
+        setQuestions([...MOCK_QUESTIONS]);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -210,10 +225,10 @@ export default function QuizScreen() {
       <View style={styles.mediaContainer}>
         <View style={styles.mediaBackground}>
           <Image 
-            source={{ uri: currentQuestion.mediaUrl }} 
+            source={{ uri: `${currentQuestion.mediaUrl}?t=${currentIndex}` }} 
             style={styles.mediaImage} 
             resizeMode="contain" 
-            key={currentQuestion.mediaUrl}
+            key={`${currentQuestion.id}_${currentIndex}`}
           />
           {!hasSubmitted && <ActivityIndicator size="small" color="#4A628A" style={{ position: 'absolute', zIndex: -1 }} />}
         </View>

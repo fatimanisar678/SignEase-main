@@ -41,7 +41,7 @@ function CharacterModel({ modelSource, animationName, playing, speed = 1 }) {
 
 // ─── Loading placeholder inside Canvas ───────────────────────────────────────
 function Loader() {
-    return null; // Canvas shows nothing while loading — spinner shown outside
+    return null;
 }
 
 // ─── Main exported component ──────────────────────────────────────────────────
@@ -89,9 +89,30 @@ export default function SignCharacter({
                 camera={{ position: [0, 0.5, 3.5], fov: 45 }}
                 onCreated={() => setLoading(false)}
             >
-                <ambientLight intensity={0.9} />
+                {/*
+                  FIX: Lighting overhaul to fix gray/flat appearance.
+                  
+                  Old setup had only:
+                    - ambientLight intensity 0.9  (too weak, caused gray flat look)
+                    - directionalLight from one angle only (harsh one-sided shadow)
+                  
+                  New setup:
+                    - ambientLight raised to 1.4  (fills the whole model with base color)
+                    - Key light: strong front-right directional (main illumination)
+                    - Fill light: soft front-left (-2, 3, 5) — this is the main fix,
+                      it removes the gray shadow on the left/front face of the character
+                    - Rim light: behind the character for depth separation from background
+                    
+                  If the model STILL looks gray, the GLB itself has no material color
+                  assigned in Blender. In that case, re-export the GLB with a skin/clothing
+                  material color applied to the mesh before exporting.
+                */}
+                <ambientLight intensity={1.4} />
                 <directionalLight position={[3, 5, 3]} intensity={1.2} castShadow />
-                <directionalLight position={[-3, 2, -2]} intensity={0.4} />
+                {/* FIX: added fill light — eliminates flat gray appearance */}
+                <directionalLight position={[-2, 3, 5]} intensity={0.8} />
+                {/* FIX: added rim/back light — gives depth and separates from background */}
+                <directionalLight position={[0, 2, -4]} intensity={0.4} color="#ffffff" />
 
                 <Suspense fallback={<Loader />}>
                     <CharacterModel

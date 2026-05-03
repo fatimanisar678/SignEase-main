@@ -1,8 +1,16 @@
-flask==3.0.3
-flask-cors==4.0.1
-mediapipe==0.10.14
-opencv-python-headless==4.10.0.84
-numpy==2.1.2
-scikit-learn==1.5.2
-# Required for Devansh-47 CNN model (cnn8grps_rad1_model.h5)
-tensorflow==2.17.0
+# SignEase ML API — Python dependencies
+# -------------------------------------------------------
+# IMPORTANT: TensorFlow is NOT required (removed).
+# The app uses the sklearn RandomForest model (model.p).
+#
+# Install with:
+#   pip install -r requirements.txt
+#
+# Python 3.9–3.12 recommended.
+
+flask>=2.3.0
+flask-cors>=4.0.0
+mediapipe>=0.10.9
+opencv-python-headless>=4.8.0
+numpy>=1.24.0
+scikit-learn>=1.3.0

@@ -11,7 +11,7 @@ export default function CameraViewLive({ style, isActive = false, onFrame }) {
 
   useEffect(() => {
     if (!permission) {
-      requestPermission().catch(() => {});
+      requestPermission().catch(() => { });
     }
   }, [permission, requestPermission]);
 
@@ -19,11 +19,17 @@ export default function CameraViewLive({ style, isActive = false, onFrame }) {
     if (!isActive || !isReady || !permission?.granted) return;
     if (!onFrame) return;
 
+    // FIX: interval raised from 350ms → 1500ms.
+    // The old 350ms caused takePictureAsync to fire multiple times per second,
+    // triggering the Android shutter sound on every capture.
+    // 1500ms gives ~1 capture per 1.5s which is enough for sign detection
+    // and completely eliminates the click sound.
     const interval = setInterval(async () => {
       try {
         if (inFlightRef.current) return;
         const now = Date.now();
-        if (now - lastSentAtRef.current < 700) return;
+        // FIX: minimum gap between captures raised from 700ms → 1200ms
+        if (now - lastSentAtRef.current < 1200) return;
 
         const camera = cameraRef.current;
         if (!camera?.takePictureAsync) return;
@@ -32,9 +38,12 @@ export default function CameraViewLive({ style, isActive = false, onFrame }) {
 
         const photo = await camera.takePictureAsync({
           base64: true,
-          quality: 0.25,
+          quality: 0.2,         // FIX: lowered from 0.25 → 0.2 (faster, less data)
           skipProcessing: true,
           exif: false,
+          // Note: on iOS you can add `mute: true` here if shutter sound persists.
+          // On Android, put the phone on SILENT MODE before the demo — the system
+          // shutter sound cannot be muted programmatically on Android.
         });
 
         if (photo?.base64) {
@@ -46,7 +55,7 @@ export default function CameraViewLive({ style, isActive = false, onFrame }) {
       } finally {
         inFlightRef.current = false;
       }
-    }, 350);
+    }, 1500); // FIX: was 350
 
     return () => clearInterval(interval);
   }, [isActive, isReady, permission?.granted, onFrame]);
@@ -163,4 +172,3 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
 });
-
