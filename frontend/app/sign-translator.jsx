@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import ScreenContainer from '@/components/ScreenContainer';
 import PrimaryButton from '@/components/PrimaryButton';
 import CameraViewLive from '@/components/CameraView';
-import { apiRequest, ML_BASE_URL } from '@/lib/api';
+import { ML_BASE_URL } from '@/lib/api';
 
 export default function SignTranslatorScreen() {
   const [detectedText, setDetectedText] = useState('');
@@ -17,16 +17,14 @@ export default function SignTranslatorScreen() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [lastConfidence, setLastConfidence] = useState(null);
 
+  // Stabilisation: need 3 consecutive identical predictions + 1500ms cooldown
   const lastPredictionRef = useRef(null);
-  const lastCallAtRef = useRef(0);
   const consecutiveRef = useRef(0);
-  // FIX: track when the last letter was added so we don't repeat too fast
   const lastAddedAtRef = useRef(0);
 
   const handleDetectToggle = () => {
     setIsTranslating((v) => !v);
     setStatusText((t) => (t === 'Idle' ? 'Starting…' : 'Idle'));
-    // Reset detection state when stopping
     lastPredictionRef.current = null;
     consecutiveRef.current = 0;
   };
@@ -40,24 +38,18 @@ export default function SignTranslatorScreen() {
 
   const translateText = async (text, targetLang) => {
     if (!text || targetLang === 'en-US') return text;
-
-    setStatusText('Translating…');
-
     const dictionary = {
       'HELLO': { 'ur-PK': 'سلام', 'sd-PK': 'سلام', 'pa-PK': 'ست سری اکال' },
       'A': { 'ur-PK': 'الف', 'sd-PK': 'الف', 'pa-PK': 'ੳ' },
     };
-
     return dictionary[text.toUpperCase()]?.[targetLang] || text;
   };
 
   const handleTranslateAndSpeak = async () => {
     if (!builtSentence) return;
-
     setIsSpeaking(true);
     const translation = await translateText(builtSentence, selectedLanguage);
     setTranslatedSentence(translation);
-
     Speech.speak(translation, {
       language: selectedLanguage,
       onDone: () => setIsSpeaking(false),
@@ -66,17 +58,10 @@ export default function SignTranslatorScreen() {
   };
 
   const handleFrame = useCallback(async (base64) => {
-    const now = Date.now();
-    // FIX: debounce raised from 900ms → 600ms to match the slower camera interval.
-    // The camera now fires every 1500ms, so 600ms debounce here is fine.
-    if (now - lastCallAtRef.current < 600) return;
-    lastCallAtRef.current = now;
-
     try {
       setStatusText('Detecting…');
 
-      // FIX: Call ML server directly on port 8000 instead of routing through
-      // Node backend on port 5000. This removes one failure point.
+      // BUG FIX: Call ML server directly. Was already correct in previous version.
       const response = await fetch(`${ML_BASE_URL}/predict-sign`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -86,53 +71,47 @@ export default function SignTranslatorScreen() {
       if (!response.ok) throw new Error(`Server ${response.status}`);
       const data = await response.json();
 
+      // BUG FIX: Read "prediction" and "confidence" from response.
+      // Old code already read these correctly, but the ML API was returning
+      // "char"/"word"/"sentence" instead — so prediction was always null.
+      // Now the ML API returns the right shape, these fields work correctly.
       const prediction = data?.prediction ?? null;
       const confidence = data?.confidence ?? 0;
 
       if (!prediction) {
-        // FIX: show why — no hand, or low confidence
         const msg = data?.message || 'No hand';
-        setStatusText(msg.includes('confidence') ? 'Low confidence' : 'No hand');
+        setStatusText(msg.includes('hand') ? 'No hand detected' : 'Low confidence');
         consecutiveRef.current = 0;
+        lastPredictionRef.current = null;
         return;
       }
 
-      // FIX: show confidence in status so you can debug during demo
-      setStatusText(`Live · ${Math.round(confidence * 100)}%`);
+      // Show confidence in status bar
+      setStatusText(`Detecting · ${Math.round(confidence * 100)}%`);
       setLastConfidence(Math.round(confidence * 100));
 
-      // FIX: Sentence building — improved stability.
-      // Old: needed 2 consecutive same frames → added letter (too easy to trigger or miss)
-      // New: needs 3 consecutive same frames, AND at least 1500ms since last letter added.
-      // This means:
-      //   - Short accidental frames (1-2 matches) are ignored
-      //   - The same letter won't repeat-spam if you hold the sign too long
-      //   - You get ~1 letter every 1.5 seconds minimum, which feels natural
-
+      // Stabilisation: require 3 identical consecutive frames + 1500ms cooldown
       if (prediction === lastPredictionRef.current) {
         consecutiveRef.current += 1;
 
-        if (consecutiveRef.current === 3) {
+        if (consecutiveRef.current >= 3) {
+          const now = Date.now();
           const timeSinceLastAdd = now - lastAddedAtRef.current;
 
-          // FIX: cooldown — don't add the same letter again within 1500ms
           if (timeSinceLastAdd > 1500) {
-            const char = prediction === ' ' ? ' ' : prediction;
+            const char = prediction;
             setBuiltSentence((prev) => prev + char);
             setDetectedText(prediction);
             lastAddedAtRef.current = now;
-
-            // Speak each letter as it's added (optional — uncomment for demo)
-            // Speech.speak(char, { language: 'en-US', rate: 1.2 });
+            consecutiveRef.current = 0; // reset after adding so we need 3 fresh frames again
           }
         }
       } else {
-        // Different prediction — reset consecutive count
         lastPredictionRef.current = prediction;
-        consecutiveRef.current = 0;
+        consecutiveRef.current = 1;
       }
     } catch (e) {
-      setStatusText('API Error');
+      setStatusText('API Error — is the Flask server running?');
       console.error('Sign detection error:', e.message);
     }
   }, []);
@@ -177,7 +156,6 @@ export default function SignTranslatorScreen() {
 
       <CameraViewLive style={styles.camera} isActive={isTranslating} onFrame={handleFrame} />
 
-      {/* FIX: show confidence bar during active detection */}
       {isTranslating && lastConfidence !== null && (
         <View style={styles.confidenceRow}>
           <Text style={styles.confidenceLabel}>Confidence</Text>
@@ -251,7 +229,6 @@ const styles = StyleSheet.create({
   langChipActive: { backgroundColor: '#4A628A', borderColor: '#3B82F6' },
   langChipText: { fontSize: 12, color: '#475569', fontWeight: '600' },
   langChipTextActive: { color: '#FFFFFF' },
-  // FIX: confidence bar styles
   confidenceRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10, paddingHorizontal: 4 },
   confidenceLabel: { fontSize: 12, color: '#64748B', width: 74 },
   confidenceBarBg: { flex: 1, height: 6, backgroundColor: '#E2E8F0', borderRadius: 3, overflow: 'hidden' },

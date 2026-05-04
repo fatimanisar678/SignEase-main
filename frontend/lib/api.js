@@ -3,7 +3,7 @@ import { Platform } from 'react-native';
 // ─── CHANGE THIS to your PC's local IP when running on a phone/device ───────
 // On emulator: Android uses 10.0.2.2, iOS simulator uses localhost
 // On a real device: use your computer's Wi-Fi IP (e.g. 192.168.1.100)
-const LAN_IP = process.env.EXPO_PUBLIC_API_IP || '192.168.0.190';
+const LAN_IP = process.env.EXPO_PUBLIC_API_IP || '10.48.106.111';
 const PORT = process.env.EXPO_PUBLIC_API_PORT || '5000';
 
 const getApiBaseUrl = () => {

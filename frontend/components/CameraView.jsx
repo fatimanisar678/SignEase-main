@@ -6,7 +6,6 @@ export default function CameraViewLive({ style, isActive = false, onFrame }) {
   const [permission, requestPermission] = useCameraPermissions();
   const [isReady, setIsReady] = useState(false);
   const cameraRef = useRef(null);
-  const lastSentAtRef = useRef(0);
   const inFlightRef = useRef(false);
 
   useEffect(() => {
@@ -19,17 +18,9 @@ export default function CameraViewLive({ style, isActive = false, onFrame }) {
     if (!isActive || !isReady || !permission?.granted) return;
     if (!onFrame) return;
 
-    // FIX: interval raised from 350ms → 1500ms.
-    // The old 350ms caused takePictureAsync to fire multiple times per second,
-    // triggering the Android shutter sound on every capture.
-    // 1500ms gives ~1 capture per 1.5s which is enough for sign detection
-    // and completely eliminates the click sound.
     const interval = setInterval(async () => {
       try {
         if (inFlightRef.current) return;
-        const now = Date.now();
-        // FIX: minimum gap between captures raised from 700ms → 1200ms
-        if (now - lastSentAtRef.current < 1200) return;
 
         const camera = cameraRef.current;
         if (!camera?.takePictureAsync) return;
@@ -38,24 +29,29 @@ export default function CameraViewLive({ style, isActive = false, onFrame }) {
 
         const photo = await camera.takePictureAsync({
           base64: true,
-          quality: 0.2,         // FIX: lowered from 0.25 → 0.2 (faster, less data)
-          skipProcessing: true,
+          // FIX 1: Raised quality from 0.2 → 0.5
+          // At 0.2 the JPEG was too compressed — cv2.imdecode on the server
+          // sometimes returned None (corrupt image), and MediaPipe failed to
+          // detect hands in the blurry result even when it did decode.
+          quality: 0.5,
+          // FIX 2: Removed skipProcessing: true
+          // skipProcessing skips expo's orientation correction, meaning the
+          // image was sent to the server rotated 90° or 270° depending on
+          // how the user holds the phone. MediaPipe cannot detect hands in
+          // rotated images. With skipProcessing removed, expo normalises the
+          // orientation before encoding, so the server always gets an upright image.
           exif: false,
-          // Note: on iOS you can add `mute: true` here if shutter sound persists.
-          // On Android, put the phone on SILENT MODE before the demo — the system
-          // shutter sound cannot be muted programmatically on Android.
         });
 
         if (photo?.base64) {
-          lastSentAtRef.current = Date.now();
           await onFrame(photo.base64);
         }
       } catch (e) {
-        // Ignore intermittent camera capture errors
+        // Ignore intermittent camera errors
       } finally {
         inFlightRef.current = false;
       }
-    }, 1500); // FIX: was 350
+    }, 1500);
 
     return () => clearInterval(interval);
   }, [isActive, isReady, permission?.granted, onFrame]);

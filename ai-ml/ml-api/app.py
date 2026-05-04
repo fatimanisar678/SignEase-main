@@ -3,7 +3,6 @@ import os
 import pickle
 import traceback
 import warnings
-import time
 
 import cv2
 import mediapipe as mp
@@ -18,20 +17,20 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(HERE, "model.p")
 
 # ── Load Model ─────────────────────────────────
-model = None
-
 with open(MODEL_PATH, "rb") as f:
     data = pickle.load(f)
 
 model = data["model"] if isinstance(data, dict) else data
-
 print("[OK] Model Loaded")
 
 # ── Mediapipe ─────────────────────────────────
 mp_hands = mp.solutions.hands
+
+# FIX 1: Lowered min_detection_confidence from 0.4 → 0.3 to handle
+# lower-quality images from the mobile camera.
 hands_detector = mp_hands.Hands(
     static_image_mode=True,
-    min_detection_confidence=0.4,
+    min_detection_confidence=0.3,
     max_num_hands=1,
 )
 
@@ -49,94 +48,76 @@ LABEL_MAP = {
 
 EXPECTED_FEATURES = 42
 
-# ── STATE (from main.py) ──────────────────────
-stabilization_buffer = []
-stable_char = None
-word_buffer = ""
-sentence = ""
-last_registered_time = time.time()
-registration_delay = 1.5
-
 # ── Helpers ──────────────────────────────────
 def decode_image(image_base64):
     if "," in image_base64:
         image_base64 = image_base64.split(",", 1)[1]
+    # FIX 2: Pad base64 if needed (mobile can send unpadded base64)
+    missing_padding = len(image_base64) % 4
+    if missing_padding:
+        image_base64 += "=" * (4 - missing_padding)
     raw = base64.b64decode(image_base64)
     arr = np.frombuffer(raw, dtype=np.uint8)
-    return cv2.imdecode(arr, cv2.IMREAD_COLOR)
+    img = cv2.imdecode(arr, cv2.IMREAD_COLOR)
+    return img  # may be None if decode fails — callers must check
 
 def extract_features(hand_landmarks):
     data_aux = []
     x_, y_ = [], []
-
     for lm in hand_landmarks.landmark:
         x_.append(lm.x)
         y_.append(lm.y)
-
     for lm in hand_landmarks.landmark:
         data_aux.append(lm.x - min(x_))
         data_aux.append(lm.y - min(y_))
-
     if len(data_aux) < EXPECTED_FEATURES:
         data_aux.extend([0] * (EXPECTED_FEATURES - len(data_aux)))
-
     return np.array(data_aux[:EXPECTED_FEATURES])
 
-def predict_char(img):
-    global stabilization_buffer, stable_char, word_buffer, sentence, last_registered_time
-
-    img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+def try_detect_hand(img_rgb):
+    """Try to detect hand. Returns hand_landmarks or None."""
     results = hands_detector.process(img_rgb)
+    if results.multi_hand_landmarks:
+        return results.multi_hand_landmarks[0]
+    return None
 
-    if not results.multi_hand_landmarks:
+def predict_char(img):
+    """
+    FIX 3: Try all 4 rotations of the image when detecting hands.
+    expo-camera with skipProcessing:true on Android often sends the image
+    rotated 90° or 270°. MediaPipe fails to detect hands in rotated images.
+    By trying all rotations we always find the hand regardless of device
+    orientation or expo-camera processing mode.
+    """
+    img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+    # Rotations to try: 0°, 90° CW, 180°, 90° CCW
+    rotations = [
+        img_rgb,
+        cv2.rotate(img_rgb, cv2.ROTATE_90_CLOCKWISE),
+        cv2.rotate(img_rgb, cv2.ROTATE_180),
+        cv2.rotate(img_rgb, cv2.ROTATE_90_COUNTERCLOCKWISE),
+    ]
+
+    hand_landmarks = None
+    for rotated in rotations:
+        hand_landmarks = try_detect_hand(rotated)
+        if hand_landmarks:
+            break
+
+    if not hand_landmarks:
         return None
 
-    hand_landmarks = results.multi_hand_landmarks[0]
     features = extract_features(hand_landmarks)
-
     prediction = model.predict([features])
     predicted_char = LABEL_MAP[int(prediction[0])]
 
-    # 🔥 Stabilization logic (from main.py)
-    stabilization_buffer.append(predicted_char)
-    if len(stabilization_buffer) > 30:
-        stabilization_buffer.pop(0)
+    confidence = 1.0
+    if hasattr(model, "predict_proba"):
+        proba = model.predict_proba([features])[0]
+        confidence = float(np.max(proba))
 
-    if stabilization_buffer.count(predicted_char) > 25:
-        current_time = time.time()
-
-        if current_time - last_registered_time > registration_delay:
-            stable_char = predicted_char
-            last_registered_time = current_time
-
-            if stable_char == ' ':
-                if word_buffer.strip():
-                    sentence_update = word_buffer + " "
-                    word_buffer_local = ""
-                    return {
-                        "char": stable_char,
-                        "word": "",
-                        "sentence_update": sentence_update
-                    }
-
-            elif stable_char == '.':
-                if word_buffer.strip():
-                    sentence_update = word_buffer + "."
-                    word_buffer_local = ""
-                    return {
-                        "char": stable_char,
-                        "word": "",
-                        "sentence_update": sentence_update
-                    }
-
-            else:
-                return {
-                    "char": stable_char,
-                    "word": stable_char,
-                    "sentence_update": ""
-                }
-
-    return None
+    return {"prediction": predicted_char, "confidence": confidence}
 
 # ── Flask App ─────────────────────────────────
 app = Flask(__name__)
@@ -148,33 +129,38 @@ def health():
 
 @app.post("/predict-sign")
 def predict_sign():
-    global word_buffer, sentence
-
-    data = request.get_json()
-    image_base64 = data.get("imageBase64")
+    req_data = request.get_json()
+    image_base64 = req_data.get("imageBase64")
 
     if not image_base64:
         return jsonify({"error": "No image"}), 400
 
     try:
         img = decode_image(image_base64)
+
+        # FIX 4: Check if image decoded successfully before processing.
+        # cv2.imdecode silently returns None on corrupt/truncated JPEG.
+        # Previously this would crash on cvtColor giving a 500 error
+        # that the frontend showed as "API Error" instead of the real problem.
+        if img is None:
+            return jsonify({
+                "prediction": None,
+                "confidence": 0.0,
+                "message": "Could not decode image — try increasing camera quality"
+            })
+
         result = predict_char(img)
 
         if result is None:
-            return jsonify({"prediction": None})
-
-        # 🔥 Word & Sentence handling
-        if result["sentence_update"]:
-            sentence += result["sentence_update"]
-            word_buffer = ""
-
-        elif result["word"]:
-            word_buffer += result["word"]
+            return jsonify({
+                "prediction": None,
+                "confidence": 0.0,
+                "message": "No hand detected"
+            })
 
         return jsonify({
-            "char": result["char"],
-            "word": word_buffer,
-            "sentence": sentence
+            "prediction": result["prediction"],
+            "confidence": result["confidence"],
         })
 
     except Exception:
